@@ -65,7 +65,6 @@
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj",
-        "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "GameJam_ocean.slnx"
+    "dotnet.defaultSolution": "GameJam_ocean_2d.sln"
 }
