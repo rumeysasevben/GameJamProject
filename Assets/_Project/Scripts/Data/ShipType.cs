@@ -1,16 +1,10 @@
-using UnityEngine;
-
-public class ShipType : MonoBehaviour
+/// <summary>
+/// Class of vessel. Determines how heavy a ship feels to steer — speeds and
+/// turn rate are set per ship by the spawner from the night's NightConfig.
+/// </summary>
+public enum ShipType
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    SmallBoat,
+    MediumShip,
+    LargeCargoShip
 }
