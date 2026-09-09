@@ -29,7 +29,10 @@ public static class FenerAudioLinker
     private const string BootScenePath = "Assets/Scenes/Boot.unity";
 
     /// <summary>The looping hum, assigned to its own slot rather than the library.</summary>
-    private const string HumId = "beam_hum";
+    public const string HumId = "beam_hum";
+
+    /// <summary>Where the sound library lives, for the builders that wire it up.</summary>
+    public const string LibraryAssetPath = LibraryPath;
 
     /// <summary>Music layers in order. Index 0 plays from the start of a night; the rest open as ships arrive.</summary>
     private static readonly string[] MusicOrder = { "music_base", "music_layer_1", "music_layer_2", "music_layer_3", "music_layer_4" };
@@ -39,21 +42,63 @@ public static class FenerAudioLinker
     [MenuItem("Fener/6 - Ses dosyalarını bağla", priority = 6)]
     public static void LinkAll()
     {
+        int wired = ImportAndFillLibrary();
+
+        Dictionary<string, List<AudioClip>> sfx = Collect(SfxFolder);
+        Dictionary<string, List<AudioClip>> music = Collect(MusicFolder);
+        WireAudioManager(sfx, music);
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log($"Fener: {wired} ses ismi bağlandı. Boş kalan isimler sessiz çalışır.");
+    }
+
+    /// <summary>
+    /// Imports the audio and fills the library, without touching any scene.
+    /// This is the half the full rebuild runs: the scenes it goes on to build
+    /// wire their own AudioManagers, so opening and saving Boot here would only
+    /// be work that gets thrown away.
+    /// </summary>
+    public static int ImportAndFillLibrary()
+    {
         FenerEditorUtility.EnsureFolder(SfxFolder);
         FenerEditorUtility.EnsureFolder(MusicFolder);
 
         ApplyImportSettings(SfxFolder, music: false);
         ApplyImportSettings(MusicFolder, music: true);
 
+        return FillLibrary(Collect(SfxFolder));
+    }
+
+    /// <summary>
+    /// The looping beam hum, or null if it has not been dropped in yet.
+    ///
+    /// Public because the scene builder needs it too: rebuilding the Boot scene
+    /// used to hand back an AudioManager with empty hum and music slots, which
+    /// silently undid whatever this linker had wired. A rebuild has to restore
+    /// the audio, not lose it.
+    /// </summary>
+    public static AudioClip FindHum()
+    {
         Dictionary<string, List<AudioClip>> sfx = Collect(SfxFolder);
+        return sfx.TryGetValue(HumId, out List<AudioClip> clips) && clips.Count > 0 ? clips[0] : null;
+    }
+
+    /// <summary>The music layers in play order, skipping any that are not there yet.</summary>
+    public static AudioClip[] FindMusicLayers()
+    {
         Dictionary<string, List<AudioClip>> music = Collect(MusicFolder);
+        var layers = new List<AudioClip>();
 
-        int wired = FillLibrary(sfx);
-        WireAudioManager(sfx, music);
+        foreach (string id in MusicOrder)
+        {
+            if (music.TryGetValue(id, out List<AudioClip> clips) && clips.Count > 0)
+            {
+                layers.Add(clips[0]);
+            }
+        }
 
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-        Debug.Log($"Fener: {wired} ses ismi bağlandı. Boş kalan isimler sessiz çalışır.");
+        return layers.ToArray();
     }
 
     /// <summary>

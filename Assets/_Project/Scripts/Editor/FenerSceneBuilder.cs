@@ -55,7 +55,7 @@ public static class FenerSceneBuilder
         Debug.Log("Fener: Boot ve Game sahneleri kuruldu.");
     }
 
-    [MenuItem("Fener/Hepsini kur (0-5)", priority = 20)]
+    [MenuItem("Fener/Hepsini kur (0-6)", priority = 20)]
     public static void BuildEverything()
     {
         // Import settings first: everything below reads sprite sizes and pivots
@@ -64,6 +64,11 @@ public static class FenerSceneBuilder
         FenerArt.ApplyImportSettings();
         FenerPlaceholderArt.GenerateAll();
         FenerContentBuilder.BuildAll();
+
+        // Before the scenes: they read the hum and the music layers as they
+        // build their AudioManagers.
+        FenerAudioLinker.ImportAndFillLibrary();
+
         FenerPrefabBuilder.BuildAll();
         BuildScenes();
         FenerProjectSettings.Apply();
@@ -87,11 +92,7 @@ public static class FenerSceneBuilder
 
         // Alongside the GameManager, and just as long-lived: the music has to
         // survive the move between nights or it would restart every time.
-        var audioObject = new GameObject("AudioManager", typeof(AudioManager));
-        using (var fields = new FenerEditorUtility.Fields(audioObject.GetComponent<AudioManager>()))
-        {
-            fields.Set("library", AssetDatabase.LoadAssetAtPath<SfxLibrary>($"{DataFolder}/SfxLibrary.asset"));
-        }
+        CreateAudioManager();
 
         // The menu is not decoration: a browser will not play a sound until the
         // page has been clicked, so the game has to open on something clickable.
@@ -124,6 +125,10 @@ public static class FenerSceneBuilder
 
         CreateCamera(SeaNight * 0.5f);
         CreateEventSystem();
+
+        // A spare, for when the Game scene is played on its own. It stands
+        // down as soon as Boot's has been through.
+        CreateAudioManager();
 
         // --- World
         var world = new GameObject("World");
@@ -249,11 +254,39 @@ public static class FenerSceneBuilder
 
     // ---------------------------------------------------------------- World pieces
 
+    /// <summary>
+    /// Builds an AudioManager wired to the library, the hum and whatever music
+    /// layers exist.
+    ///
+    /// It goes in both scenes. Boot's is the one that normally survives, but
+    /// pressing Play on the Game scene is how a night actually gets worked on,
+    /// and without one there the whole game is silent — which is exactly the
+    /// sort of thing that gets mistaken for broken audio. The singleton guard
+    /// means the spare destroys itself the moment it meets the real one.
+    /// </summary>
+    private static void CreateAudioManager()
+    {
+        var go = new GameObject("AudioManager", typeof(AudioManager));
+
+        using (var fields = new FenerEditorUtility.Fields(go.GetComponent<AudioManager>()))
+        {
+            fields.Set("library", AssetDatabase.LoadAssetAtPath<SfxLibrary>(FenerAudioLinker.LibraryAssetPath))
+                  .Set("humClip", FenerAudioLinker.FindHum())
+                  .SetArray("musicLayers", FenerAudioLinker.FindMusicLayers());
+        }
+    }
+
     private static Camera CreateCamera(Color background)
     {
         var go = new GameObject("Main Camera", typeof(Camera));
         go.tag = "MainCamera";
         go.transform.position = new Vector3(0f, 0f, -10f);
+
+        // Unity's own "create camera" menu adds this; AddComponent does not.
+        // Without an AudioListener in the scene nothing is audible at all,
+        // however well the rest of the audio is wired — and it fails in
+        // complete silence, with no error to go on.
+        go.AddComponent<AudioListener>();
 
         var camera = go.GetComponent<Camera>();
         camera.orthographic = true;
