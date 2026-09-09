@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 150900871a0b6bb40b62395a7a6ca75d, type: 3}
+  m_Name: Yuk
+  m_EditorClassIdentifier: Assembly-CSharp::ShipType
+  kind: 2
+  speed: 0.45
+  turnRate: 90
+  collisionRadius: 0.75
+  codePrefix: 0000000000000000
+  codeLength: 4
+  directionSprites:
+  - {fileID: 21300000, guid: bcfe8daf68a40d5418267b2cf3c74443, type: 3}
+  - {fileID: 21300000, guid: f3c353fc75b9e8a408c9bb9aa3d26653, type: 3}
+  - {fileID: 21300000, guid: abaf8808354b3614a81c431eed6e5794, type: 3}
+  - {fileID: 21300000, guid: 0d3615774dd8706468b8b14122ab74ab, type: 3}
+  - {fileID: 21300000, guid: ed1f2ddbadd0a424cb3e4c1c91768e8b, type: 3}
+  - {fileID: 21300000, guid: e75b3df89959e9b429ba01e5e7e0f14b, type: 3}
+  - {fileID: 21300000, guid: 5432aebe1da37bd4ea9aed8491077751, type: 3}
+  - {fileID: 21300000, guid: c6efb24b0c74ae54280e4422f1b229f1, type: 3}
+  boundSprites:
+  - {fileID: 21300000, guid: 5972ce1a5fb887144a88a1983dc7eb62, type: 3}
+  - {fileID: 21300000, guid: dd8ee84bbe683c048a913a7359ac2cf8, type: 3}
+  - {fileID: 21300000, guid: f0ea701ff8f5b5840861604e65bc703c, type: 3}
+  - {fileID: 21300000, guid: d7eb09403680aa74785f6844dd5bfdd4, type: 3}
+  - {fileID: 21300000, guid: 9f8681452ad34a043b637c1a6a5d4116, type: 3}
+  - {fileID: 21300000, guid: 39275bfa3226b8c41b4ebdd43c5b2c46, type: 3}
+  - {fileID: 21300000, guid: 4c7ffe2c43d056c489285d26e6b9b231, type: 3}
+  - {fileID: 21300000, guid: e419e9986e0ae46418e137e179c6bd56, type: 3}
+  wakeSprites: []
+  signalLampOffset: {x: 0, y: 0.12}

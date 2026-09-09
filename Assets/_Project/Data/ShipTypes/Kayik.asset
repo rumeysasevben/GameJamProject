@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 150900871a0b6bb40b62395a7a6ca75d, type: 3}
+  m_Name: Kayik
+  m_EditorClassIdentifier: Assembly-CSharp::ShipType
+  kind: 0
+  speed: 0.9
+  turnRate: 360
+  collisionRadius: 0.35
+  codePrefix: 00000000
+  codeLength: 2
+  directionSprites:
+  - {fileID: 21300000, guid: af6ab5a639af9594295bffedeb54d9eb, type: 3}
+  - {fileID: 21300000, guid: 34ef457630a6ac5429bd1687c5d60706, type: 3}
+  - {fileID: 21300000, guid: b059d1059d7500e499816f325f8b1294, type: 3}
+  - {fileID: 21300000, guid: bfc3db3796731254489a5573e55ecc21, type: 3}
+  - {fileID: 21300000, guid: 2b30f8e954ffd5c429b0f4d9e318193a, type: 3}
+  - {fileID: 21300000, guid: 58792bc5c757db4468a7101c12d81a58, type: 3}
+  - {fileID: 21300000, guid: dc5ad786d7e731540bd99771081d9ac2, type: 3}
+  - {fileID: 21300000, guid: 64afa6aef2530324b975a2782137782d, type: 3}
+  boundSprites:
+  - {fileID: 21300000, guid: bb554ba01c8e43c4dbd8ad9f068b50ee, type: 3}
+  - {fileID: 21300000, guid: cfac6f5e946ede84cac4674011117658, type: 3}
+  - {fileID: 21300000, guid: c8fe0c8a3da6e0247b2df7bdc3952693, type: 3}
+  - {fileID: 21300000, guid: fd92c337f8008b441b6ede3eec811af8, type: 3}
+  - {fileID: 21300000, guid: d8cf55b5babd74c41920b86323f1c718, type: 3}
+  - {fileID: 21300000, guid: 412b766566ba7994980e62ac86cc203f, type: 3}
+  - {fileID: 21300000, guid: 75e9070dad113af458dbae4d5223631e, type: 3}
+  - {fileID: 21300000, guid: db9d9cb551e0f374a86debb37aa183c9, type: 3}
+  wakeSprites: []
+  signalLampOffset: {x: 0, y: 0.12}

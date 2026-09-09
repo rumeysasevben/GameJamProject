@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bb14ca799614fd4b8cd0e8b021d850d, type: 3}
+  m_Name: Night_07
+  m_EditorClassIdentifier: Assembly-CSharp::NightData
+  nightNumber: 7
+  showSequenceAlways: 0
+  fogEnabled: 0
+  docks:
+  - position: {x: -6.9, y: -1.5}
+    radius: 0.8
+    color: {r: 1, g: 0.85, b: 0.55, a: 1}
+  rocks:
+  - position: {x: 0, y: 0.8}
+    radius: 0.6
+    sprite: {fileID: 21300000, guid: 4b95bfc416c1ef14089956b515d371ec, type: 3}
+  - position: {x: 0, y: -1.6}
+    radius: 0.6
+    sprite: {fileID: 21300000, guid: 4b95bfc416c1ef14089956b515d371ec, type: 3}
+  - position: {x: 2.6, y: -0.4}
+    radius: 0.5
+    sprite: {fileID: 21300000, guid: 4b95bfc416c1ef14089956b515d371ec, type: 3}
+  ships:
+  - type: {fileID: 11400000, guid: c1d8ee845973d934994e765339765983, type: 2}
+    position: {x: 8, y: 2.5}
+    sequence: 0000000000000000
+    dockIndex: 0
+    note: They came through the haze. They saw nothing but the lighthouse.
+  - type: {fileID: 11400000, guid: 199463921a45a8640b18b5d0d964ad74, type: 2}
+    position: {x: 6, y: 0.5}
+    sequence: 010000000000000000000000
+    dockIndex: 0
+    note: The captain knows these rocks by heart. Tonight knowing was not enough.
+  - type: {fileID: 11400000, guid: c1d8ee845973d934994e765339765983, type: 2}
+    position: {x: 7, y: -2.8}
+    sequence: 0000000001000000
+    dockIndex: 0
+    note: They are carrying a passenger. She is coming to this town for the first
+      time.
+  - type: {fileID: 11400000, guid: 199463921a45a8640b18b5d0d964ad74, type: 2}
+    position: {x: 4, y: -3.4}
+    sequence: 010000000000000001000000
+    dockIndex: 0
+    note: A lamp burns on the deck. It has not gone out in years.

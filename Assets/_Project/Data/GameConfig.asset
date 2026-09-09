@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe58521627db68741900bde3581de78e, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: Assembly-CSharp::GameConfig
+  beamHalfAngle: 12
+  beamLength: 22
+  signalInterval: 3
+  flashShort: 0.2
+  flashLong: 0.6
+  flashGap: 0.25
+  bufferTimeout: 2
+  bufferMax: 4
+  entrySpeed: 1.1
+  entrySlowRadius: 1.5
+  entryStagger: 0.7
+  stopRadius: 0.1
+  bounceDistance: 0.2
+  bounceDuration: 0.3
+  bounceFreeze: 0.5
+  dockSlideTime: 1
+  noteDuration: 3
+  nightTitleDuration: 1.5
+  dawnDuration: 7
+  duskDuration: 2.5

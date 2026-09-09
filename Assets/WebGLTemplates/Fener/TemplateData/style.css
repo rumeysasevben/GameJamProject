@@ -1,0 +1,58 @@
+/* Black page, centred canvas, nothing else. The game is a dark screen with one
+   light on it; a chrome-heavy page would fight that. */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+#unity-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 16:9, scaled to whatever the frame is, letterboxed by the black page. */
+#unity-canvas {
+  width: 100vw;
+  height: 56.25vw;
+  max-height: 100vh;
+  max-width: 177.78vh;
+  background: #000;
+  display: block;
+}
+
+#unity-loading-bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+
+#unity-progress-bar-empty {
+  width: 240px;
+  height: 3px;
+  background: #1b2340;
+}
+
+#unity-progress-bar-full {
+  width: 0%;
+  height: 3px;
+  background: #f6b8a0;
+  transition: width 0.1s linear;
+}
+
+#unity-warning {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}

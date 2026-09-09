@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbfbd0d874950a5408917daa4e3a4ded, type: 3}
+  m_Name: NightList
+  m_EditorClassIdentifier: Assembly-CSharp::NightList
+  nights:
+  - {fileID: 11400000, guid: 07c783665b4844c43bcbb631adcebfb7, type: 2}
+  - {fileID: 11400000, guid: 5fed66e07f6916d4e8f537eb9f629d7a, type: 2}
+  - {fileID: 11400000, guid: 9ddd6ed98cdf23049a5f03a38ff57250, type: 2}
+  - {fileID: 11400000, guid: 7bbe67129384ccb4991db2d28f26146a, type: 2}
+  - {fileID: 11400000, guid: 99fcaf5f9d0a7064c990b997748781b8, type: 2}
+  - {fileID: 11400000, guid: 8489aea61d3f4674e96504d6d09dcc69, type: 2}
+  - {fileID: 11400000, guid: 4c169cb1ca52b474a96afc71ab2868f4, type: 2}
+  - {fileID: 11400000, guid: 7710548d07396014b995dac357370773, type: 2}
+  - {fileID: 11400000, guid: 95f7841c110db514483f56ec6328b9d5, type: 2}
+  - {fileID: 11400000, guid: a9035e79771cf6f40bc4e7921e27f163, type: 2}

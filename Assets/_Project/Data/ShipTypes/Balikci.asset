@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 150900871a0b6bb40b62395a7a6ca75d, type: 3}
+  m_Name: Balikci
+  m_EditorClassIdentifier: Assembly-CSharp::ShipType
+  kind: 1
+  speed: 0.65
+  turnRate: 180
+  collisionRadius: 0.5
+  codePrefix: 01000000
+  codeLength: 3
+  directionSprites:
+  - {fileID: 21300000, guid: 709e1a48799641146985094edda9d536, type: 3}
+  - {fileID: 21300000, guid: 92234e3032dcf3d4880a714c4d5b80ad, type: 3}
+  - {fileID: 21300000, guid: 2854df48815ae2749a9672690c2ebf24, type: 3}
+  - {fileID: 21300000, guid: c3c8a579bad19d04381d85346dc47bbc, type: 3}
+  - {fileID: 21300000, guid: ab8f887f28f06b94bba11f2399128e18, type: 3}
+  - {fileID: 21300000, guid: 389ce1ee8072a0246b7282c491d442ba, type: 3}
+  - {fileID: 21300000, guid: 7e9c22ee2d53db446858494f7a6039b6, type: 3}
+  - {fileID: 21300000, guid: d5af30530c60a3f49991cfdecc7f8ab6, type: 3}
+  boundSprites:
+  - {fileID: 21300000, guid: 00950cb047a7ac748b2203e76d1f1df7, type: 3}
+  - {fileID: 21300000, guid: edd3e03431931b24ca367a3b3e7d6231, type: 3}
+  - {fileID: 21300000, guid: a7a938fb8c3fcd341aad88280120dbfc, type: 3}
+  - {fileID: 21300000, guid: fe861bdaa29d164449a12e373f5ca01c, type: 3}
+  - {fileID: 21300000, guid: c30300c3378604541addd04d4131c722, type: 3}
+  - {fileID: 21300000, guid: 0f19947a662456e43b71d843251d7e00, type: 3}
+  - {fileID: 21300000, guid: 412aa58f49dc0704a8b824c8781ee916, type: 3}
+  - {fileID: 21300000, guid: 985307b5f6fecad49b88cda7a134732d, type: 3}
+  wakeSprites: []
+  signalLampOffset: {x: 0, y: 0.12}
