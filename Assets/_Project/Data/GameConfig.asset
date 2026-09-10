@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe58521627db68741900bde3581de78e, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::GameConfig
-  beamHalfAngle: 12
-  beamLength: 22
+  beamHalfAngle: 8
+  beamLength: 15
+  beamMinLength: 1.5
+  beamReachMargin: 0.6
   signalInterval: 3
   flashShort: 0.2
   flashLong: 0.6

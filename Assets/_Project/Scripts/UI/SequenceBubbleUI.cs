@@ -62,6 +62,11 @@ public class SequenceBubbleUI : MonoBehaviour
         }
     }
 
+    // The pause panel's "always show ship codes" switch applies at once.
+    private void OnEnable() => GameSettings.Changed += Refresh;
+
+    private void OnDisable() => GameSettings.Changed -= Refresh;
+
     private void LateUpdate()
     {
         // After the ship has moved, so the bubble never trails a frame behind.
@@ -110,7 +115,7 @@ public class SequenceBubbleUI : MonoBehaviour
     {
         if (panel != null)
         {
-            panel.SetActive(!suppressed && (alwaysOn || targeted || flashing));
+            panel.SetActive(!suppressed && (alwaysOn || GameSettings.ShowSequences || targeted || flashing));
         }
 
         Color color = targeted ? highlightColor : normalColor;

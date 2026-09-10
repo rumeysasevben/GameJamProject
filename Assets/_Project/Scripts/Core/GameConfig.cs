@@ -15,10 +15,16 @@ public class GameConfig : ScriptableObject
 {
     [Header("Beam")]
     [Tooltip("Half the cone's opening angle. A ship counts as targeted when it sits within this many degrees of the beam's centre line.")]
-    public float beamHalfAngle = 12f;
+    public float beamHalfAngle = 8f;
 
-    [Tooltip("How far the cone reaches. Should overshoot the screen so the beam never visibly ends.")]
-    public float beamLength = 22f;
+    [Tooltip("The furthest the beam can reach. The beam ends where the cursor is, so this only bites when pointing past it; it has to cover the furthest ship, about 14 units from the lamp.")]
+    public float beamLength = 15f;
+
+    [Tooltip("The shortest the beam gets, so it does not vanish into the lamp when the cursor is on the tower.")]
+    public float beamMinLength = 1.5f;
+
+    [Tooltip("How far past its tip the beam still catches a ship. A ship under the cursor has its centre a little beyond the point, and should still count.")]
+    public float beamReachMargin = 0.6f;
 
     [Header("Signal")]
     [Tooltip("Seconds an idle ship waits between replays of its sequence. Short enough that a player who looks away does not have to wait to be reminded.")]

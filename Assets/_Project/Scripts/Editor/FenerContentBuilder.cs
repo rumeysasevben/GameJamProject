@@ -41,9 +41,12 @@ public static class FenerContentBuilder
         //   Yuk     ··__      four symbols, opens with two shorts
         // Different lengths mean two classes can never collide, and the
         // variations inside a family keep the ships of one night apart.
-        ShipType kayik = BuildShipType("Kayik", ShipKind.Kayik, 0.9f, 360f, 0.35f, new[] { S }, 2);
-        ShipType balikci = BuildShipType("Balikci", ShipKind.Balikci, 0.65f, 180f, 0.5f, new[] { L }, 3);
-        ShipType yuk = BuildShipType("Yuk", ShipKind.Yuk, 0.45f, 90f, 0.75f, new[] { S, S }, 4);
+        // Speeds raised about half again after playtesting: at the document's
+        // values an escort to the pier was the slowest part of the night. The
+        // ratio between classes is kept, so a freighter still feels heavy.
+        ShipType kayik = BuildShipType("Kayik", ShipKind.Kayik, 1.4f, 360f, 0.35f, new[] { S }, 2);
+        ShipType balikci = BuildShipType("Balikci", ShipKind.Balikci, 1.0f, 180f, 0.5f, new[] { L }, 3);
+        ShipType yuk = BuildShipType("Yuk", ShipKind.Yuk, 0.7f, 90f, 0.75f, new[] { S, S }, 4);
 
         var nights = new List<NightData>
         {

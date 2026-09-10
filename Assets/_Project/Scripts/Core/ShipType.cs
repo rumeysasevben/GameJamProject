@@ -22,7 +22,7 @@ public class ShipType : ScriptableObject
     [Tooltip("Which vessel this describes. Only used for readability and audio variation.")]
     public ShipKind kind;
 
-    [Tooltip("World units per second. Reference values: 0.9 kayik / 0.65 balikci / 0.45 yuk.")]
+    [Tooltip("World units per second while following the cursor. Reference values: 1.4 kayik / 1.0 balikci / 0.7 yuk.")]
     public float speed = 0.65f;
 
     [Tooltip("Degrees per second the heading can swing. Reference values: 360 / 180 / 90 — this is what makes a cargo ship feel heavy.")]

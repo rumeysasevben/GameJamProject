@@ -60,8 +60,11 @@ public class NightController : MonoBehaviour
     [Tooltip("The panel shown once the sun is up.")]
     [SerializeField] private NightSummaryUI summary;
 
-    [Tooltip("The \"click to skip\" line, shown only while the sun is coming up.")]
-    [SerializeField] private GameObject dawnSkipHint;
+    [Tooltip("The sunrise screen after the last night.")]
+    [SerializeField] private EndingUI ending;
+
+    [Tooltip("The pause panel. The night does not run its frame while it is open.")]
+    [SerializeField] private PauseMenuUI pauseMenu;
 
     [Header("Sequence")]
     [SerializeField] private DawnController dawn;
@@ -101,6 +104,9 @@ public class NightController : MonoBehaviour
 
     /// <summary>True once every ship is home. Signals stop being read at that point.</summary>
     public bool IsNightOver => nightOver;
+
+    /// <summary>True while a night is being played and can be paused.</summary>
+    public bool CanPause => night != null && !nightOver;
 
     /// <summary>Seconds since the night began. Shown on the summary screen.</summary>
     public float ElapsedTime { get; private set; }
@@ -240,9 +246,9 @@ public class NightController : MonoBehaviour
             summary.Hide();
         }
 
-        if (dawnSkipHint != null)
+        if (ending != null)
         {
-            dawnSkipHint.SetActive(false);
+            ending.Hide();
         }
 
         // The windows are the campaign's record, not the night's: every house
@@ -276,6 +282,12 @@ public class NightController : MonoBehaviour
     private void Update()
     {
         if (night == null)
+        {
+            return;
+        }
+
+        // Paused: nothing runs, and no click on the panel reaches the matcher.
+        if (pauseMenu != null && pauseMenu.IsOpen)
         {
             return;
         }
@@ -463,11 +475,6 @@ public class NightController : MonoBehaviour
 
         if (dawn != null)
         {
-            if (dawnSkipHint != null)
-            {
-                dawnSkipHint.SetActive(true);
-            }
-
             dawn.Play(config != null ? config.dawnDuration : 7f);
             return;
         }
@@ -482,12 +489,14 @@ public class NightController : MonoBehaviour
     /// </summary>
     private void HandleDawnComplete()
     {
-        if (dawnSkipHint != null)
-        {
-            dawnSkipHint.SetActive(false);
-        }
-
         bool isFinalNight = GameManager.Instance == null || GameManager.Instance.IsLastNight;
+        int nightNumber = night != null ? night.nightNumber : 1;
+
+        if (isFinalNight && ending != null)
+        {
+            ending.Show(nightNumber, PlayAgain, () => Advance(true));
+            return;
+        }
 
         if (summary == null)
         {
@@ -495,12 +504,34 @@ public class NightController : MonoBehaviour
             return;
         }
 
+        // Tonight's window was lit as the last ship berthed, so the town's count
+        // already includes it; the card saves that one for the end of its row.
+        int windowsLit = town != null ? town.LitCount : nightNumber;
+        int windowsTotal = town != null
+            ? town.Count
+            : GameManager.Instance != null && GameManager.Instance.Nights != null ? GameManager.Instance.Nights.Count : nightNumber;
+
         summary.Show(
-            night != null ? night.nightNumber : 1,
+            nightNumber,
+            ships.Count,
+            windowsLit,
+            windowsTotal,
             ElapsedTime,
             CollisionCount,
             isFinalNight,
             () => Advance(isFinalNight));
+    }
+
+    /// <summary>From the ending: wipe the campaign and start again from the first night.</summary>
+    private void PlayAgain()
+    {
+        if (GameManager.Instance == null)
+        {
+            return;
+        }
+
+        GameManager.Instance.ResetProgress();
+        GameManager.Instance.StartNight(0);
     }
 
     private void Advance(bool isFinalNight)

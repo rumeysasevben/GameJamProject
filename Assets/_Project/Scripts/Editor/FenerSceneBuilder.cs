@@ -41,6 +41,29 @@ public static class FenerSceneBuilder
     private static readonly Color SeaDay = new Color(0.420f, 0.616f, 0.780f);
     private static readonly Color LandColor = new Color(0.306f, 0.361f, 0.329f);
 
+    // The panel palette from the UI mock-up.
+    private static readonly Color Cream = new Color(0.957f, 0.925f, 0.851f);
+    private static readonly Color Ink = new Color(0.165f, 0.180f, 0.259f);
+    private static readonly Color CardColor = new Color(0.114f, 0.141f, 0.216f, 0.96f);
+    private static readonly Color Amber = new Color(1f, 0.788f, 0.420f);
+    private static readonly Color PipDim = new Color(0.227f, 0.267f, 0.365f);
+    private static readonly Color DuskInk = new Color(0.259f, 0.235f, 0.318f);
+
+    private enum ButtonStyle
+    {
+        /// <summary>Cream capsule, dark label. The thing to press.</summary>
+        Primary,
+
+        /// <summary>Cream outline on the dark card.</summary>
+        Secondary,
+
+        /// <summary>Dark capsule, for the light ending screen.</summary>
+        Dark,
+
+        /// <summary>Dark outline, for the light ending screen.</summary>
+        DarkOutline
+    }
+
     [MenuItem("Fener/4 - Sahneleri kur", priority = 4)]
     public static void BuildScenes()
     {
@@ -170,13 +193,9 @@ public static class FenerSceneBuilder
         NightTitleUI title = CreateNightTitle(canvas.transform);
         NoteCardUI note = CreateNoteCard(canvas.transform);
         NightCounterUI counter = CreateNightCounter(canvas.transform);
-        NightSummaryUI summary = CreateNightSummary(canvas.transform);
-
-        // Only up while the sun is rising, and quiet enough to be ignored by a
-        // player who wants to watch it.
-        GameObject skipHint = CreateText(canvas.transform, "DawnSkipHint", "click to skip", 28f, new Vector2(0f, -430f), new Vector2(600f, 50f)).gameObject;
-        skipHint.GetComponent<TMP_Text>().color = new Color(0.96f, 0.94f, 0.88f, 0.45f);
-        skipHint.SetActive(false);
+        NightSummaryUI summary = CreateNightSummary(canvas.transform, nightList != null ? nightList.Count : 10);
+        EndingUI ending = CreateEnding(canvas.transform);
+        PauseMenuUI pause = CreatePauseMenu(canvas.transform);
 
         // --- Managers
         var managers = new GameObject("Managers");
@@ -230,10 +249,16 @@ public static class FenerSceneBuilder
                   .Set("noteCard", note)
                   .Set("nightCounter", counter)
                   .Set("summary", summary)
-                  .Set("dawnSkipHint", skipHint)
+                  .Set("ending", ending)
+                  .Set("pauseMenu", pause)
                   .Set("splash", splash)
                   .Set("dawn", dawnObject.GetComponent<DawnController>())
                   .Set("town", town);
+        }
+
+        using (var fields = new FenerEditorUtility.Fields(pause))
+        {
+            fields.Set("night", controllerObject.GetComponent<NightController>());
         }
 
         EditorSceneManager.SaveScene(scene, GameScenePath);
@@ -662,26 +687,29 @@ public static class FenerSceneBuilder
 
     private static SequenceBarUI CreateSequenceBar(Transform parent)
     {
+        // Top centre, and smaller than it started. The bottom of the screen
+        // belongs to the arrival notes; the bar is something glanced at while
+        // typing, not read, so it does not need to be large.
         var root = new GameObject("SequenceBar", typeof(RectTransform), typeof(SequenceBarUI));
         root.transform.SetParent(parent, false);
-        Anchor(root.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 200f));
+        Anchor(root.GetComponent<RectTransform>(), new Vector2(0.5f, 1f), new Vector2(0f, -70f), new Vector2(400f, 130f));
 
         var slots = new Object[4];
         var symbols = new Object[4];
 
         for (int i = 0; i < 4; i++)
         {
-            float x = (i - 1.5f) * 110f;
+            float x = (i - 1.5f) * 74f;
 
-            Image slot = CreateImage(root.transform, $"Slot_{i}", FenerArt.SlotEmpty(), new Vector2(x, 0f), new Vector2(96f, 96f));
+            Image slot = CreateImage(root.transform, $"Slot_{i}", FenerArt.SlotEmpty(), new Vector2(x, 0f), new Vector2(64f, 64f));
             slots[i] = slot;
 
-            Image symbol = CreateImage(slot.transform, "Symbol", FenerArt.Dot(), Vector2.zero, new Vector2(64f, 64f));
+            Image symbol = CreateImage(slot.transform, "Symbol", FenerArt.Dot(), Vector2.zero, new Vector2(42f, 42f));
             symbol.enabled = false;
             symbols[i] = symbol;
         }
 
-        Image line = CreateImage(root.transform, "TimeoutLine", FenerPlaceholderArt.Load("square"), new Vector2(0f, -70f), new Vector2(512f, 8f));
+        Image line = CreateImage(root.transform, "TimeoutLine", FenerPlaceholderArt.Load("square"), new Vector2(0f, -46f), new Vector2(300f, 5f));
         line.type = Image.Type.Filled;
         line.fillMethod = Image.FillMethod.Horizontal;
         line.fillOrigin = (int)Image.OriginHorizontal.Left;
@@ -709,6 +737,7 @@ public static class FenerSceneBuilder
         Anchor(root.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 240f));
 
         TMP_Text label = CreateText(root.transform, "Label", "Night 1", 110f, Vector2.zero, new Vector2(900f, 200f));
+        label.fontStyle = FontStyles.Bold;
 
         root.GetComponent<CanvasGroup>().alpha = 0f;
 
@@ -743,28 +772,76 @@ public static class FenerSceneBuilder
     }
 
     /// <summary>
-    /// The panel that closes a night. Sized and worded by the script; this only
-    /// lays it out.
+    /// The card between dawn and the next dusk, after the "Gece sonu" mock-up:
+    /// a dark rounded card with a spaced-out heading, two handwritten lines, a
+    /// row of the town's windows and one cream button. Animated and worded by
+    /// the script; this only lays it out.
     /// </summary>
-    private static NightSummaryUI CreateNightSummary(Transform parent)
+    private static NightSummaryUI CreateNightSummary(Transform parent, int windowCount)
     {
         var root = new GameObject("NightSummary", typeof(RectTransform), typeof(CanvasGroup), typeof(NightSummaryUI));
         root.transform.SetParent(parent, false);
-        Anchor(root.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1920f, 1080f));
+        Stretch(root.GetComponent<RectTransform>());
 
-        // A dim sheet over the harbour rather than a solid panel: the lit town
+        // A dim sheet over the harbour rather than a solid screen: the lit town
         // is the reward, and covering it up to report on it would be perverse.
-        Image veil = CreateImage(root.transform, "Veil", FenerPlaceholderArt.Load("square"), Vector2.zero, new Vector2(1920f, 1080f));
-        veil.color = new Color(0.02f, 0.04f, 0.08f, 0.45f);
+        Image veil = CreateImage(root.transform, "Veil", FenerPlaceholderArt.Load("square"), Vector2.zero, Vector2.zero);
+        Stretch(veil.rectTransform);
+        veil.color = new Color(0.02f, 0.04f, 0.08f, 0.55f);
         veil.raycastTarget = true;
 
-        Image panel = CreateImage(root.transform, "Panel", FenerArt.NoteCard(), new Vector2(0f, 40f), new Vector2(1040f, 360f));
+        var cardObject = new GameObject("Card", typeof(RectTransform), typeof(CanvasGroup));
+        cardObject.transform.SetParent(root.transform, false);
+        var card = cardObject.GetComponent<RectTransform>();
+        var cardSize = new Vector2(780f, 460f);
+        Anchor(card, new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), cardSize);
 
-        TMP_Text title = CreateText(panel.transform, "Title", "Night 1 complete", 64f, new Vector2(0f, 80f), new Vector2(960f, 100f));
-        TMP_Text body = CreateText(panel.transform, "Body", string.Empty, 34f, new Vector2(0f, -10f), new Vector2(960f, 120f));
+        Image shadow = CreateSliced(card, "Shadow", FenerArt.SoftShadow(), new Vector2(0f, -16f), cardSize + new Vector2(90f, 90f), 1f);
+        shadow.color = new Color(0f, 0f, 0f, 0.55f);
 
-        Button continueButton = CreateButton(panel.transform, "ContinueButton", "Continue", new Vector2(0f, -120f));
-        TMP_Text continueLabel = continueButton.GetComponentInChildren<TMP_Text>();
+        Image panel = CreateSliced(card, "Panel", FenerArt.RoundedPanel(), Vector2.zero, cardSize, 1f);
+        panel.color = CardColor;
+
+        TMP_Text eyebrow = CreateText(card, "Eyebrow", "NIGHT 1 COMPLETE", 24f, new Vector2(0f, 172f), new Vector2(700f, 40f));
+        eyebrow.fontStyle = FontStyles.Bold;
+        eyebrow.characterSpacing = 14f;
+        eyebrow.color = new Color(Cream.r, Cream.g, Cream.b, 0.5f);
+
+        TMP_Text body = CreateText(card, "Body", "Two ships are home.\nOne more window is lit in town.", 46f, new Vector2(0f, 84f), new Vector2(720f, 140f));
+        UseHandwriting(body);
+        body.lineSpacing = -8f;
+        body.color = Cream;
+
+        // The town's windows, one per night, earned ones amber.
+        var pipsObject = new GameObject("Pips", typeof(RectTransform), typeof(CanvasGroup));
+        pipsObject.transform.SetParent(card, false);
+        Anchor(pipsObject.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0f, -22f), new Vector2(720f, 70f));
+
+        int count = Mathf.Max(1, windowCount);
+        var pips = new Object[count];
+        var glows = new Object[count];
+        const float pitch = 44f;
+
+        for (int i = 0; i < count; i++)
+        {
+            var position = new Vector2((i - (count - 1) * 0.5f) * pitch, 0f);
+
+            Image glow = CreateSliced(pipsObject.transform, $"Glow_{i}", FenerArt.SoftShadow(), position, new Vector2(78f, 88f), 1.8f);
+            glow.color = new Color(Amber.r, Amber.g, Amber.b, 0.75f);
+            glows[i] = glow;
+
+            Image pip = CreateSliced(pipsObject.transform, $"Pip_{i}", FenerArt.RoundedPanel(), position, new Vector2(30f, 40f), 4f);
+            pip.color = PipDim;
+            pips[i] = pip;
+        }
+
+        TMP_Text windowsLabel = CreateText(card, "WindowsLabel", "1 / 10 windows lit", 22f, new Vector2(0f, -74f), new Vector2(700f, 34f));
+        windowsLabel.color = new Color(Cream.r, Cream.g, Cream.b, 0.6f);
+
+        TMP_Text stats = CreateText(card, "Stats", "1:07   ·   not a scratch", 20f, new Vector2(0f, -106f), new Vector2(700f, 30f));
+        stats.color = new Color(Cream.r, Cream.g, Cream.b, 0.4f);
+
+        Button continueButton = CreateButton(card, "ContinueButton", "On to night 2", new Vector2(0f, -170f), ButtonStyle.Primary, new Vector2(340f, 76f), 0.025f);
 
         var group = root.GetComponent<CanvasGroup>();
         group.alpha = 0f;
@@ -774,13 +851,240 @@ public static class FenerSceneBuilder
         using (var fields = new FenerEditorUtility.Fields(root.GetComponent<NightSummaryUI>()))
         {
             fields.Set("group", group)
-                  .Set("title", title)
+                  .Set("veil", veil)
+                  .Set("card", card)
+                  .Set("cardGroup", cardObject.GetComponent<CanvasGroup>())
+                  .Set("eyebrow", eyebrow)
                   .Set("body", body)
+                  .Set("pipsGroup", pipsObject.GetComponent<CanvasGroup>())
+                  .SetArray("pips", pips)
+                  .SetArray("pipGlows", glows)
+                  .Set("windowsLabel", windowsLabel)
+                  .Set("stats", stats)
                   .Set("continueButton", continueButton)
-                  .Set("continueLabel", continueLabel);
+                  .Set("continueLabel", continueButton.GetComponentInChildren<TMP_Text>())
+                  .Set("continueJuice", continueButton.GetComponent<UIButtonJuice>())
+                  .Set("pipDim", PipDim)
+                  .Set("pipLit", Amber)
+                  .Set("veilAlpha", 0.55f);
         }
 
         return root.GetComponent<NightSummaryUI>();
+    }
+
+    /// <summary>
+    /// The screen after the last night, after the "Final" mock-up: the whole
+    /// view gone to a sunrise gradient, one line in large type and two buttons.
+    /// </summary>
+    private static EndingUI CreateEnding(Transform parent)
+    {
+        var root = new GameObject("Ending", typeof(RectTransform), typeof(CanvasGroup), typeof(EndingUI));
+        root.transform.SetParent(parent, false);
+        Stretch(root.GetComponent<RectTransform>());
+
+        // Not quite opaque, so the lit town still shows faintly through the sky.
+        Image sky = CreateImage(root.transform, "Sky", FenerArt.DawnGradient(), Vector2.zero, Vector2.zero);
+        Stretch(sky.rectTransform);
+        sky.color = new Color(1f, 1f, 1f, 0.94f);
+        sky.raycastTarget = true;
+
+        TMP_Text eyebrow = CreateText(root.transform, "Eyebrow", "THE TENTH NIGHT", 26f, new Vector2(0f, 160f), new Vector2(900f, 44f));
+        eyebrow.fontStyle = FontStyles.Bold;
+        eyebrow.characterSpacing = 16f;
+        eyebrow.color = new Color(DuskInk.r, DuskInk.g, DuskInk.b, 0.45f);
+
+        TMP_Text title = CreateText(root.transform, "Title", "The town is awake.", 104f, new Vector2(0f, 62f), new Vector2(1500f, 150f));
+        title.fontStyle = FontStyles.Bold;
+        title.color = DuskInk;
+
+        TMP_Text subtitle = CreateText(root.transform, "Subtitle", "Every ship is home. The lighthouse can rest now.", 42f, new Vector2(0f, -42f), new Vector2(1300f, 70f));
+        UseHandwriting(subtitle);
+        subtitle.color = new Color(DuskInk.r, DuskInk.g, DuskInk.b, 0.8f);
+
+        Button playAgain = CreateButton(root.transform, "PlayAgainButton", "Play again", new Vector2(-135f, -170f), ButtonStyle.Dark, new Vector2(250f, 72f), 0.02f);
+        Button menu = CreateButton(root.transform, "MenuButton", "Menu", new Vector2(125f, -170f), ButtonStyle.DarkOutline, new Vector2(210f, 72f), 0f);
+
+        var group = root.GetComponent<CanvasGroup>();
+        group.alpha = 0f;
+        group.interactable = false;
+        group.blocksRaycasts = false;
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<EndingUI>()))
+        {
+            fields.Set("group", group)
+                  .Set("eyebrow", eyebrow)
+                  .Set("title", title)
+                  .Set("subtitle", subtitle)
+                  .Set("playAgainButton", playAgain)
+                  .Set("playAgainJuice", playAgain.GetComponent<UIButtonJuice>())
+                  .Set("menuButton", menu)
+                  .Set("menuJuice", menu.GetComponent<UIButtonJuice>());
+        }
+
+        return root.GetComponent<EndingUI>();
+    }
+
+    /// <summary>
+    /// The pause panel, after the "Mola" mock-up, and the small button in the
+    /// top-right corner that opens it. The button sits outside the panel's
+    /// canvas group so it stays clickable while the panel is hidden.
+    /// </summary>
+    private static PauseMenuUI CreatePauseMenu(Transform parent)
+    {
+        var root = new GameObject("PauseMenu", typeof(RectTransform), typeof(PauseMenuUI));
+        root.transform.SetParent(parent, false);
+        Stretch(root.GetComponent<RectTransform>());
+
+        // --- Corner button
+        var pauseSize = new Vector2(76f, 60f);
+        Button pauseButton = CreateButton(root.transform, "PauseButton", "II", Vector2.zero, ButtonStyle.Secondary, pauseSize, 0f);
+        Anchor(pauseButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(-90f, -70f), pauseSize);
+        var pauseButtonGroup = pauseButton.gameObject.AddComponent<CanvasGroup>();
+
+        // --- Panel
+        var panelObject = new GameObject("Panel", typeof(RectTransform), typeof(CanvasGroup));
+        panelObject.transform.SetParent(root.transform, false);
+        Stretch(panelObject.GetComponent<RectTransform>());
+
+        Image veil = CreateImage(panelObject.transform, "Veil", FenerPlaceholderArt.Load("square"), Vector2.zero, Vector2.zero);
+        Stretch(veil.rectTransform);
+        veil.color = new Color(0.02f, 0.04f, 0.08f, 0.5f);
+        veil.raycastTarget = true;
+
+        var cardObject = new GameObject("Card", typeof(RectTransform));
+        cardObject.transform.SetParent(panelObject.transform, false);
+        var card = cardObject.GetComponent<RectTransform>();
+        var cardSize = new Vector2(620f, 560f);
+        Anchor(card, new Vector2(0.5f, 0.5f), Vector2.zero, cardSize);
+
+        Image shadow = CreateSliced(card, "Shadow", FenerArt.SoftShadow(), new Vector2(0f, -16f), cardSize + new Vector2(90f, 90f), 1f);
+        shadow.color = new Color(0f, 0f, 0f, 0.55f);
+
+        Image panel = CreateSliced(card, "Panel", FenerArt.RoundedPanel(), Vector2.zero, cardSize, 1f);
+        panel.color = CardColor;
+        panel.raycastTarget = true;
+
+        TMP_Text title = CreateText(card, "Title", "Paused", 46f, new Vector2(0f, 222f), new Vector2(520f, 64f));
+        title.fontStyle = FontStyles.Bold;
+        title.color = Cream;
+
+        UIToggle music = CreateToggleRow(card, "Music", 140f);
+        UIToggle sfx = CreateToggleRow(card, "Sound effects", 76f);
+        UIToggle sequences = CreateToggleRow(card, "Always show ship codes", 12f);
+
+        TMP_Text beamLabel = CreateText(card, "BeamWidthLabel", "Beam width", 30f, new Vector2(-60f, -58f), new Vector2(400f, 46f));
+        beamLabel.alignment = TextAlignmentOptions.Left;
+        beamLabel.color = Cream;
+
+        TMP_Text beamValue = CreateText(card, "BeamWidthValue", "medium", 26f, new Vector2(170f, -58f), new Vector2(160f, 46f));
+        beamValue.alignment = TextAlignmentOptions.Right;
+        beamValue.color = new Color(Cream.r, Cream.g, Cream.b, 0.55f);
+
+        Slider beamSlider = CreateSlider(card, new Vector2(0f, -110f), new Vector2(500f, 30f));
+
+        Button resume = CreateButton(card, "ResumeButton", "Resume", new Vector2(-125f, -200f), ButtonStyle.Primary, new Vector2(230f, 72f), 0.02f);
+        Button menu = CreateButton(card, "MenuButton", "Menu", new Vector2(125f, -200f), ButtonStyle.Secondary, new Vector2(230f, 72f), 0f);
+
+        var group = panelObject.GetComponent<CanvasGroup>();
+        group.alpha = 0f;
+        group.interactable = false;
+        group.blocksRaycasts = false;
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<PauseMenuUI>()))
+        {
+            fields.Set("pauseButton", pauseButton)
+                  .Set("pauseButtonGroup", pauseButtonGroup)
+                  .Set("group", group)
+                  .Set("veil", veil)
+                  .Set("card", card)
+                  .Set("musicToggle", music)
+                  .Set("sfxToggle", sfx)
+                  .Set("sequencesToggle", sequences)
+                  .Set("beamSlider", beamSlider)
+                  .Set("beamValueLabel", beamValue)
+                  .Set("resumeButton", resume)
+                  .Set("menuButton", menu);
+        }
+
+        return root.GetComponent<PauseMenuUI>();
+    }
+
+    /// <summary>A label on the left of the card and a switch on the right.</summary>
+    private static UIToggle CreateToggleRow(Transform card, string caption, float y)
+    {
+        TMP_Text label = CreateText(card, $"{caption}Label", caption, 30f, new Vector2(-60f, y), new Vector2(400f, 46f));
+        label.alignment = TextAlignmentOptions.Left;
+        label.color = Cream;
+
+        var trackSize = new Vector2(72f, 40f);
+        var root = new GameObject($"{caption}Toggle", typeof(RectTransform), typeof(UIToggle));
+        root.transform.SetParent(card, false);
+        Anchor(root.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(214f, y), trackSize);
+
+        Image track = CreateSliced(root.transform, "Track", FenerArt.Pill(), Vector2.zero, trackSize, 70f / trackSize.y);
+        track.raycastTarget = true;
+
+        Image knob = CreateImage(root.transform, "Knob", FenerPlaceholderArt.Load("circle"), Vector2.zero, new Vector2(30f, 30f));
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<UIToggle>()))
+        {
+            fields.Set("track", track)
+                  .Set("knob", knob)
+                  .Set("trackOn", Amber)
+                  .Set("trackOff", new Color(0.30f, 0.34f, 0.44f))
+                  .Set("knobOn", Ink)
+                  .Set("knobOff", new Color(0.80f, 0.80f, 0.82f))
+                  .Set("knobTravel", 16f);
+        }
+
+        return root.GetComponent<UIToggle>();
+    }
+
+    /// <summary>
+    /// A slider in the panel style: dim capsule track, amber fill, cream knob.
+    /// Built on Unity's default slider so the drag handling and layout are the
+    /// stock ones, then restyled.
+    /// </summary>
+    private static Slider CreateSlider(Transform parent, Vector2 anchoredPosition, Vector2 size)
+    {
+        var resources = new DefaultControls.Resources
+        {
+            standard = FenerArt.Pill(),
+            background = FenerArt.Pill(),
+            knob = FenerPlaceholderArt.Load("circle")
+        };
+
+        GameObject sliderObject = DefaultControls.CreateSlider(resources);
+        sliderObject.name = "BeamWidthSlider";
+        sliderObject.transform.SetParent(parent, false);
+        Anchor(sliderObject.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), anchoredPosition, size);
+
+        var slider = sliderObject.GetComponent<Slider>();
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.value = 0.5f;
+        slider.transition = Selectable.Transition.None;
+
+        // The track is half the slider's height, so its capsule ends need the
+        // corners scaled to that.
+        float trackCorners = 70f / (size.y * 0.5f);
+
+        var background = sliderObject.transform.Find("Background").GetComponent<Image>();
+        background.color = PipDim;
+        background.pixelsPerUnitMultiplier = trackCorners;
+
+        var fill = sliderObject.transform.Find("Fill Area/Fill").GetComponent<Image>();
+        fill.color = Amber;
+        fill.pixelsPerUnitMultiplier = trackCorners;
+
+        var slideArea = sliderObject.transform.Find("Handle Slide Area").GetComponent<RectTransform>();
+        slideArea.sizeDelta = new Vector2(-size.y, 0f);
+
+        var handle = sliderObject.transform.Find("Handle Slide Area/Handle").GetComponent<Image>();
+        handle.color = Cream;
+        handle.rectTransform.sizeDelta = new Vector2(size.y, 0f);
+
+        return slider;
     }
 
     private static NoteCardUI CreateNoteCard(Transform parent)
@@ -792,7 +1096,8 @@ public static class FenerSceneBuilder
         Image panel = CreateImage(root.transform, "Panel", FenerArt.NoteCard(), new Vector2(0f, -200f), new Vector2(1040f, 180f));
         Anchor(panel.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, -200f), new Vector2(1040f, 180f));
 
-        TMP_Text label = CreateText(panel.transform, "Label", string.Empty, 34f, Vector2.zero, new Vector2(960f, 140f));
+        TMP_Text label = CreateText(panel.transform, "Label", string.Empty, 38f, Vector2.zero, new Vector2(960f, 140f));
+        UseHandwriting(label);
 
         using (var fields = new FenerEditorUtility.Fields(root.GetComponent<NoteCardUI>()))
         {
@@ -805,19 +1110,90 @@ public static class FenerSceneBuilder
         return root.GetComponent<NoteCardUI>();
     }
 
-    private static Button CreateButton(Transform parent, string buttonName, string caption, Vector2 anchoredPosition)
+    /// <summary>
+    /// A capsule button with a soft glow behind it, driven by
+    /// <see cref="UIButtonJuice"/>. <paramref name="breathe"/> gives it an idle
+    /// swell, for the one button on a screen that is meant to be pressed.
+    /// </summary>
+    private static Button CreateButton(Transform parent, string buttonName, string caption, Vector2 anchoredPosition,
+        ButtonStyle style = ButtonStyle.Primary, Vector2? size = null, float breathe = 0f)
     {
-        Image background = CreateImage(parent, buttonName, FenerArt.Panel(), anchoredPosition, new Vector2(300f, 80f));
+        Vector2 rect = size ?? new Vector2(320f, 76f);
+
+        var root = new GameObject(buttonName, typeof(RectTransform));
+        root.transform.SetParent(parent, false);
+        Anchor(root.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), anchoredPosition, rect);
+
+        bool dark = style == ButtonStyle.Dark || style == ButtonStyle.DarkOutline;
+        bool outline = style == ButtonStyle.Secondary || style == ButtonStyle.DarkOutline;
+        Color tone = dark ? DuskInk : Cream;
+
+        Vector2 glowSize = rect + new Vector2(70f, 70f);
+        Image glow = CreateSliced(root.transform, "Glow", FenerArt.SoftShadow(), Vector2.zero, glowSize, 120f / glowSize.y);
+        glow.color = dark ? new Color(1f, 1f, 1f, 0.6f) : new Color(Amber.r, Amber.g, Amber.b, 0.5f);
+
+        // The capsule's slice border is half its texture, so scaling it to the
+        // button's height keeps the ends fully round at any size.
+        Image background = CreateSliced(root.transform, "Background", outline ? FenerArt.PillOutline() : FenerArt.Pill(), Vector2.zero, rect, 70f / rect.y);
+        background.color = outline ? new Color(tone.r, tone.g, tone.b, 0.4f) : tone;
 
         // CreateImage turns raycasts off, which is right for every other image
-        // in the game and wrong for the one thing meant to be clicked.
+        // in the game and wrong for the one thing meant to be clicked. The
+        // outline gets a clear fill so its middle is clickable too.
         background.raycastTarget = true;
 
-        var button = background.gameObject.AddComponent<Button>();
-        button.targetGraphic = background;
+        if (outline)
+        {
+            Image hit = CreateImage(root.transform, "HitArea", FenerPlaceholderArt.Load("square"), Vector2.zero, rect);
+            hit.color = Color.clear;
+            hit.raycastTarget = true;
+        }
 
-        CreateText(background.transform, "Label", caption, 40f, Vector2.zero, new Vector2(300f, 80f));
+        var button = root.AddComponent<Button>();
+        button.targetGraphic = background;
+        button.transition = Selectable.Transition.None;
+
+        TMP_Text label = CreateText(root.transform, "Label", caption, 30f, Vector2.zero, rect);
+        label.fontStyle = FontStyles.Bold;
+        label.color = outline ? tone : dark ? Cream : Ink;
+
+        var juice = root.AddComponent<UIButtonJuice>();
+        using (var fields = new FenerEditorUtility.Fields(juice))
+        {
+            fields.Set("button", button)
+                  .Set("glow", glow)
+                  .Set("breathe", breathe);
+        }
+
         return button;
+    }
+
+    /// <summary>A nine-sliced image. <paramref name="cornerScale"/> above 1 shrinks the corners, below 1 grows them.</summary>
+    private static Image CreateSliced(Transform parent, string imageName, Sprite sprite, Vector2 anchoredPosition, Vector2 size, float cornerScale)
+    {
+        Image image = CreateImage(parent, imageName, sprite, anchoredPosition, size);
+        image.type = Image.Type.Sliced;
+        image.fillCenter = true;
+        image.pixelsPerUnitMultiplier = cornerScale;
+        return image;
+    }
+
+    private static void UseHandwriting(TMP_Text label)
+    {
+        TMP_FontAsset hand = FenerFonts.Hand();
+        if (hand != null)
+        {
+            label.font = hand;
+        }
+    }
+
+    private static void Stretch(RectTransform rect)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = Vector2.zero;
     }
 
     private static Image CreateImage(Transform parent, string imageName, Sprite sprite, Vector2 anchoredPosition, Vector2 size)
@@ -839,6 +1215,13 @@ public static class FenerSceneBuilder
         go.transform.SetParent(parent, false);
 
         var label = go.GetComponent<TextMeshProUGUI>();
+
+        TMP_FontAsset ui = FenerFonts.Ui();
+        if (ui != null)
+        {
+            label.font = ui;
+        }
+
         label.text = content;
         label.fontSize = size;
         label.alignment = TextAlignmentOptions.Center;

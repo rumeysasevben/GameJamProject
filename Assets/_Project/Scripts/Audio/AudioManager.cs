@@ -65,6 +65,10 @@ public class AudioManager : MonoBehaviour
     /// <summary>Half the screen in world units. Used to pan a sound by where it happened.</summary>
     private const float HalfScreenWidth = 9.6f;
 
+    // The levels after the pause panel's switches.
+    private float SfxLevel => GameSettings.SfxOn ? sfxVolume : 0f;
+    private float MusicLevel => GameSettings.MusicOn ? musicVolume : 0f;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -93,7 +97,7 @@ public class AudioManager : MonoBehaviour
     {
         if (hum != null)
         {
-            hum.volume = Mathf.MoveTowards(hum.volume, humTarget * sfxVolume, humFade * Time.unscaledDeltaTime * humVolume);
+            hum.volume = Mathf.MoveTowards(hum.volume, humTarget * SfxLevel, humFade * Time.unscaledDeltaTime * humVolume);
         }
 
         for (int i = 0; i < (layerSources != null ? layerSources.Length : 0); i++)
@@ -103,7 +107,7 @@ public class AudioManager : MonoBehaviour
                 continue;
             }
 
-            float target = i < openLayers ? musicVolume : 0f;
+            float target = i < openLayers ? MusicLevel : 0f;
             layerSources[i].volume = Mathf.MoveTowards(layerSources[i].volume, target, layerFade * Time.unscaledDeltaTime * musicVolume);
         }
     }
@@ -128,7 +132,7 @@ public class AudioManager : MonoBehaviour
 
     private void PlayInternal(string id, float pan)
     {
-        if (library == null || voices == null)
+        if (library == null || voices == null || SfxLevel <= 0f)
         {
             return;
         }
@@ -153,7 +157,7 @@ public class AudioManager : MonoBehaviour
 
         voice.Stop();
         voice.clip = clip;
-        voice.volume = entry.volume * sfxVolume;
+        voice.volume = entry.volume * SfxLevel;
         voice.pitch = Random.Range(entry.pitchRange.x, entry.pitchRange.y);
         voice.panStereo = pan;
         voice.Play();
@@ -184,7 +188,7 @@ public class AudioManager : MonoBehaviour
                 continue;
             }
 
-            layerSources[i].volume = i == 0 ? musicVolume : 0f;
+            layerSources[i].volume = i == 0 ? MusicLevel : 0f;
             layerSources[i].time = 0f;
             layerSources[i].Play();
         }

@@ -29,6 +29,11 @@ public class Lighthouse : MonoBehaviour
             return;
         }
 
-        beam.SetDirection(cursorWorld - LampPosition);
+        Vector2 toCursor = cursorWorld - LampPosition;
+
+        // The beam ends at the cursor: that point, marked at the tip, is where
+        // a linked ship is heading, so the light shows the way it will go.
+        beam.SetDirection(toCursor);
+        beam.SetReach(toCursor.magnitude);
     }
 }

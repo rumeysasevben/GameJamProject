@@ -246,36 +246,41 @@ public static class FenerPrefabBuilder
         // local +X with no offset of its own. Beam stretches it to whatever
         // angle and reach GameConfig asks for, and switches the mesh off.
         SpriteRenderer cone = AddSprite(beamObject.transform, "ConeSprite", FenerArt.Cone(), Vector2.zero, Vector2.one, 20);
-        cone.color = new Color(1f, 0.96f, 0.82f, 0.75f);
+        // Pale and mostly transparent: a beam of light over water, not a solid
+        // yellow wedge painted over the sea.
+        cone.color = new Color(1f, 0.95f, 0.82f, 0.35f);
 
-        // The light is a child so its own rotation can be trimmed if URP's spot
-        // does not point exactly along the mesh; the cone itself never moves.
-        var beamLightObject = new GameObject("BeamLight");
-        beamLightObject.transform.SetParent(beamObject.transform, false);
+        // Unlit, so the cone keeps its own colour. Lit, it was drawn through
+        // the dark-blue night light and came out muddy — which is why a second,
+        // white Light2D beam used to sit on top of it to brighten things. That
+        // second beam is gone: one light, and it is yellow.
+        cone.sharedMaterial = LoadOrCreateUnlitSpriteMaterial();
 
-        var beamLight = beamLightObject.AddComponent<Light2D>();
-        beamLight.lightType = Light2D.LightType.Point;
-        beamLight.color = new Color(1f, 0.92f, 0.72f);
-        beamLight.intensity = 1.2f;
-        beamLight.pointLightOuterRadius = 22f;
-        beamLight.pointLightInnerRadius = 0.5f;
-        beamLight.pointLightInnerAngle = 20f;
-        beamLight.pointLightOuterAngle = 24f;
+        // The mark at the tip of the beam. A sibling of the cone rather than a
+        // child, so the cone's stretching does not squash it; Beam keeps it at
+        // the tip and fades it with the light.
+        SpriteRenderer marker = AddSprite(beamObject.transform, "TipMarker", FenerArt.BeamMarker(), Vector2.zero, new Vector2(0.4f, 0.4f), 21);
+        marker.color = new Color(1f, 0.96f, 0.86f, 0.85f);
+        marker.sharedMaterial = cone.sharedMaterial;
 
+        // Warm, to match the cone. A near-white glow at the lamp read as a
+        // second, colder light coming out of the tower.
         var glowObject = new GameObject("LampGlow");
         glowObject.transform.SetParent(lampPoint.transform, false);
 
         var glow = glowObject.AddComponent<Light2D>();
         glow.lightType = Light2D.LightType.Point;
-        glow.color = new Color(1f, 0.95f, 0.8f);
+        glow.color = new Color(1f, 0.8f, 0.4f);
         glow.intensity = 1.5f;
         glow.pointLightOuterRadius = 1.2f;
 
         var beam = beamObject.GetComponent<Beam>();
         using (var fields = new FenerEditorUtility.Fields(beam))
         {
-            fields.Set("beamLight", beamLight)
-                  .Set("coneSprite", cone)
+            // No beamLight: the fresh Beam component starts with it empty,
+            // which is the point.
+            fields.Set("coneSprite", cone)
+                  .Set("tipMarker", marker)
                   .Set("config", LoadConfig());
         }
 
@@ -305,6 +310,32 @@ public static class FenerPrefabBuilder
 
         material.color = new Color(1f, 0.93f, 0.72f, 1f);
         EditorUtility.SetDirty(material);
+        return material;
+    }
+
+    /// <summary>
+    /// A sprite material that ignores 2D lighting. The beam is a light source
+    /// in the picture, and a light source drawn through the night's dark-blue
+    /// global light comes out looking like it is in shadow.
+    /// </summary>
+    private static Material LoadOrCreateUnlitSpriteMaterial()
+    {
+        string path = $"{MaterialFolder}/SpriteUnlit.mat";
+        var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+
+        if (material == null)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            if (shader == null)
+            {
+                Debug.LogWarning("Fener: URP Sprite-Unlit shader bulunamadı; koni ışıklı materyalle kalacak.");
+                return null;
+            }
+
+            material = new Material(shader);
+            AssetDatabase.CreateAsset(material, path);
+        }
+
         return material;
     }
 

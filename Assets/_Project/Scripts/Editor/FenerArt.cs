@@ -65,6 +65,9 @@ public static class FenerArt
     public static Sprite TargetRing() => Load("FX/target_ring", "ring");
     public static Sprite WindowGlow() => Load("FX/window_glow", "circle");
     public static Sprite FogBlob() => Load("FX/fog_blob", "square");
+
+    // Generated until drawn: drop FX/beam_marker.png in and it is used instead.
+    public static Sprite BeamMarker() => Load("FX/beam_marker", "marker");
     public static Sprite LighthouseBody() => Load("lighthouse/lighthouse_body", "square");
 
     // The artist moved the sea dressing into its own folder; either location
@@ -84,6 +87,14 @@ public static class FenerArt
     public static Sprite Bubble() => Load("UI/bubble_sequence", "square");
     public static Sprite NoteCard() => Load("UI/note_card_frame", "square");
     public static Sprite Panel() => Load("UI/panel_frame", "square");
+
+    // The panel kit from the UI mock-up. Always generated: these are nine-sliced
+    // shapes, and a drawn replacement would need its slice borders set by hand.
+    public static Sprite RoundedPanel() => FenerPlaceholderArt.Load("rounded");
+    public static Sprite Pill() => FenerPlaceholderArt.Load("pill");
+    public static Sprite PillOutline() => FenerPlaceholderArt.Load("pill_outline");
+    public static Sprite SoftShadow() => FenerPlaceholderArt.Load("soft_shadow");
+    public static Sprite DawnGradient() => FenerPlaceholderArt.Load("dawn_gradient");
 
     /// <summary>The real sprite at <paramref name="relativePath"/>, or the named placeholder if it is not there.</summary>
     public static Sprite Load(string relativePath, string placeholder)

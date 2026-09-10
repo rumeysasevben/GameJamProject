@@ -49,7 +49,24 @@ public class Beam : MonoBehaviour
     private MeshFilter meshFilter;
     private Mesh coneMesh;
     private float baseIntensity;
+    private Color baseConeColor = Color.white;
     private Coroutine flashRoutine;
+
+    [Header("Tip marker")]
+    [Tooltip("The small mark at the end of the beam. It sits where the cursor is, which is where a linked ship is heading.")]
+    [SerializeField] private SpriteRenderer tipMarker;
+
+    [Tooltip("How much the marker breathes, as a fraction of its size.")]
+    [SerializeField, Range(0f, 0.5f)] private float markerPulse = 0.12f;
+
+    [Tooltip("Breaths per second.")]
+    [SerializeField] private float markerPulseSpeed = 1.6f;
+
+    private Vector3 markerBaseScale = Vector3.one;
+    private Color markerBaseColor = Color.white;
+
+    /// <summary>How far the beam currently reaches, or below zero before it has first been aimed.</summary>
+    private float reach = -1f;
 
     /// <summary>Centre line of the cone in world space.</summary>
     public Vector2 Direction => transform.right;
@@ -57,18 +74,39 @@ public class Beam : MonoBehaviour
     /// <summary>Where the cone starts — the lamp.</summary>
     public Vector2 Origin => transform.position;
 
-    /// <summary>Half the cone's opening angle, in degrees.</summary>
-    public float HalfAngle => config != null ? config.beamHalfAngle : 12f;
+    /// <summary>Half the cone's opening angle, in degrees, after the player's beam width setting.</summary>
+    public float HalfAngle => (config != null ? config.beamHalfAngle : 12f) * GameSettings.BeamWidthMultiplier;
 
-    /// <summary>How far the cone reaches, in world units.</summary>
-    public float Length => config != null ? config.beamLength : 22f;
+    /// <summary>
+    /// How far the cone reaches right now, in world units: out to the cursor,
+    /// held between the minimum and maximum reach.
+    /// </summary>
+    public float Length => reach >= 0f ? reach : MaxLength;
+
+    private float MaxLength => config != null ? config.beamLength : 15f;
+    private float MinLength => config != null ? config.beamMinLength : 1.5f;
+    private float ReachMargin => config != null ? config.beamReachMargin : 0.6f;
 
     private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
         baseIntensity = beamLight != null ? beamLight.intensity : 0f;
+        baseConeColor = coneSprite != null ? coneSprite.color : Color.white;
+
+        if (tipMarker != null)
+        {
+            markerBaseScale = tipMarker.transform.localScale;
+            markerBaseColor = tipMarker.color;
+        }
+
         RebuildMesh();
+        PlaceMarker();
     }
+
+    // The width slider on the pause panel reshapes the cone while it is dragged.
+    private void OnEnable() => GameSettings.Changed += RebuildMesh;
+
+    private void OnDisable() => GameSettings.Changed -= RebuildMesh;
 
     /// <summary>Supplies the tuning asset when the beam is wired up in code rather than the Inspector.</summary>
     public void Configure(GameConfig gameConfig)
@@ -93,13 +131,73 @@ public class Beam : MonoBehaviour
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
+    /// <summary>
+    /// Sets how far the beam reaches — the distance from the lamp to the
+    /// cursor. The cone is refitted and the marker moved to the new tip.
+    /// </summary>
+    public void SetReach(float distance)
+    {
+        float clamped = Mathf.Clamp(distance, MinLength, MaxLength);
+
+        if (Mathf.Abs(clamped - reach) < 0.001f)
+        {
+            return;
+        }
+
+        reach = clamped;
+        RebuildMesh();
+        PlaceMarker();
+    }
+
+    private void PlaceMarker()
+    {
+        if (tipMarker != null)
+        {
+            tipMarker.transform.localPosition = new Vector3(Length, 0f, 0f);
+        }
+    }
+
+    private void Update()
+    {
+        if (tipMarker == null)
+        {
+            return;
+        }
+
+        // The marker belongs to the light: it goes where the cone goes, fades
+        // when the cone fades at dawn, and pops a little when the cone flashes.
+        bool coneShowing = coneSprite == null || coneSprite.gameObject.activeInHierarchy;
+        tipMarker.enabled = coneShowing;
+
+        if (!coneShowing)
+        {
+            return;
+        }
+
+        float coneFactor = coneSprite != null && baseConeColor.a > 0.001f
+            ? coneSprite.color.a / baseConeColor.a
+            : 1f;
+
+        float breath = 1f + Mathf.Sin(Time.time * markerPulseSpeed * Mathf.PI * 2f) * markerPulse;
+        float pop = Mathf.Lerp(1f, 1.25f, Mathf.Clamp01(coneFactor - 1f));
+        tipMarker.transform.localScale = markerBaseScale * breath * pop;
+
+        tipMarker.color = new Color(
+            markerBaseColor.r,
+            markerBaseColor.g,
+            markerBaseColor.b,
+            markerBaseColor.a * Mathf.Clamp01(coneFactor));
+    }
+
     /// <summary>True when <paramref name="point"/> lies inside the cone.</summary>
     public bool Contains(Vector2 point)
     {
         Vector2 offset = point - Origin;
         float distance = offset.magnitude;
 
-        if (distance > Length)
+        // The beam only reaches as far as it is drawn, plus a little: a ship
+        // sitting under the cursor has its centre just past the tip.
+        if (distance > Length + ReachMargin)
         {
             return false;
         }
@@ -162,7 +260,7 @@ public class Beam : MonoBehaviour
     /// </summary>
     public void Flash(Signal symbol)
     {
-        if (beamLight == null)
+        if (beamLight == null && coneSprite == null)
         {
             return;
         }
@@ -179,22 +277,47 @@ public class Beam : MonoBehaviour
         flashRoutine = StartCoroutine(FlashRoutine(hold));
     }
 
+    /// <summary>
+    /// One pulse. The drawn cone is what flashes now — it is the only beam —
+    /// going to full opacity and a hotter yellow, then easing back. A Light2D,
+    /// if one is still wired, pulses along with it.
+    /// </summary>
     private IEnumerator FlashRoutine(float hold)
     {
-        beamLight.intensity = baseIntensity * flashMultiplier;
+        // Full opacity and a little deeper in colour: the brightest a sprite
+        // can go without HDR, which the WebGL build does not have.
+        // Brighter by opacity alone, so a flash reads as the same light getting
+        // stronger rather than turning a deeper yellow.
+        Color peakCone = new Color(baseConeColor.r, baseConeColor.g, baseConeColor.b, Mathf.Min(1f, baseConeColor.a * 2f));
+
+        SetFlash(1f, peakCone);
         yield return new WaitForSeconds(hold);
 
         float elapsed = 0f;
-        float from = beamLight.intensity;
         while (elapsed < flashFade)
         {
             elapsed += Time.deltaTime;
-            beamLight.intensity = Mathf.Lerp(from, baseIntensity, elapsed / flashFade);
+            float t = Mathf.Clamp01(elapsed / flashFade);
+            SetFlash(1f - t, Color.Lerp(peakCone, baseConeColor, t));
             yield return null;
         }
 
-        beamLight.intensity = baseIntensity;
+        SetFlash(0f, baseConeColor);
         flashRoutine = null;
+    }
+
+    /// <summary><paramref name="amount"/> is how far into the flash the light is, 0 resting to 1 peak.</summary>
+    private void SetFlash(float amount, Color coneColor)
+    {
+        if (beamLight != null)
+        {
+            beamLight.intensity = Mathf.Lerp(baseIntensity, baseIntensity * flashMultiplier, amount);
+        }
+
+        if (coneSprite != null)
+        {
+            coneSprite.color = coneColor;
+        }
     }
 
     /// <summary>

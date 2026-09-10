@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Kayik
   m_EditorClassIdentifier: Assembly-CSharp::ShipType
   kind: 0
-  speed: 0.9
+  speed: 1.4
   turnRate: 360
   collisionRadius: 0.35
   codePrefix: 00000000

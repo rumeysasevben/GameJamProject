@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Yuk
   m_EditorClassIdentifier: Assembly-CSharp::ShipType
   kind: 2
-  speed: 0.45
+  speed: 0.7
   turnRate: 90
   collisionRadius: 0.75
   codePrefix: 0000000000000000

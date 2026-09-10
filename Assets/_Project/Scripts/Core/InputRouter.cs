@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -44,12 +45,16 @@ public class InputRouter : MonoBehaviour
         {
             CursorWorld = ScreenToWorld(mouse.position.ReadValue());
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            // A click on a button — the pause button in the corner — is meant
+            // for the button, not the ships.
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
+            if (mouse.leftButton.wasPressedThisFrame && !overUi)
             {
                 OnShort?.Invoke();
             }
 
-            if (mouse.rightButton.wasPressedThisFrame)
+            if (mouse.rightButton.wasPressedThisFrame && !overUi)
             {
                 OnLong?.Invoke();
             }
