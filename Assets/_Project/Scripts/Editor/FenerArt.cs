@@ -73,8 +73,15 @@ public static class FenerArt
     // The artist moved the sea dressing into its own folder; either location
     // works, so neither a stale nor a tidied project breaks.
     public static Sprite Rock() => LoadFirst("circle", "Sea/rock_01", "rock_01");
-    public static Sprite Kelp() => LoadFirst("circle", "Sea/kelp_01", "kelp_01");
+    /// <summary>One of the five rock drawings, 1 to 5.</summary>
+    public static Sprite RockVariant(int number) => LoadFirst("circle", $"Sea/rock_{number:00}");
+
+    public static Sprite Kelp() =>LoadFirst("circle", "Sea/kelp_01", "kelp_01");
     public static Sprite Wave() => LoadFirst("square", "Sea/wave_line", "wave_line");
+
+    // The coast, cut from the night mock-up. Null until it exists: the scene
+    // builder falls back to a plain slab of land rather than a stretched box.
+    public static Sprite Terrain() => Find("Terrain/coast_night");
 
     public static Sprite HouseDark() => Load("House/house_dark", "square");
     public static Sprite HouseLit() => Load("House/house_lit", "square");
@@ -87,6 +94,11 @@ public static class FenerArt
     public static Sprite Bubble() => Load("UI/bubble_sequence", "square");
     public static Sprite NoteCard() => Load("UI/note_card_frame", "square");
     public static Sprite Panel() => Load("UI/panel_frame", "square");
+
+    // The main menu: the night mock-up as its backdrop, and a left-to-right
+    // shade that darkens the sea behind the title.
+    public static Sprite MenuBackground() => Load("UI/menu_background", "square");
+    public static Sprite MenuVeil() => Load("UI/menu_veil", "square");
 
     // The panel kit from the UI mock-up. Always generated: these are nine-sliced
     // shapes, and a drawn replacement would need its slice borders set by hand.
@@ -231,16 +243,25 @@ public static class FenerArt
             return true;
         }
 
-        // Things that stand on the ground are pivoted at their foot.
+        // The terrain is a piece of the night mock-up, at the mock-up's own scale.
+        if (relativePath.StartsWith("Terrain/"))
+        {
+            rule = ImportRule.Centered(100f);
+            return true;
+        }
+
+        // Things that stand on the ground are pivoted at their foot. Both are
+        // sized to the terrain drawing: the tower to fill the pedestal it
+        // leaves, the houses to fill the lots in the town.
         if (relativePath.StartsWith("lighthouse/"))
         {
-            rule = ImportRule.BottomCentered(260f);
+            rule = ImportRule.BottomCentered(104f);
             return true;
         }
 
         if (relativePath.StartsWith("House/"))
         {
-            rule = ImportRule.BottomCentered(355f);
+            rule = ImportRule.BottomCentered(200f);
             return true;
         }
 
@@ -270,7 +291,8 @@ public static class FenerArt
             return true;
         }
 
-        if (relativePath.EndsWith("rock_01"))
+        // Every rock variant (rock_01 … rock_05) shares one scale.
+        if (relativePath.Contains("rock_0"))
         {
             rule = ImportRule.Centered(310f);
             return true;

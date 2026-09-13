@@ -81,7 +81,7 @@ public static class FenerContentBuilder
                 new RockSpawn[0],
                 new[]
                 {
-                    Ship(kayik, new Vector2(7f, 3f), new[] { S, L }, 0,
+                    Ship(kayik, new Vector2(7.2f, 2.3f), new[] { S, L }, 0,
                         "His daughter waited on the pier until morning. When she saw the light, she started to run."),
                     Ship(balikci, new Vector2(4f, -2f), new[] { L, S, S }, 0,
                         "They come back with a full hold. Nobody in town goes hungry this week.")
@@ -112,22 +112,22 @@ public static class FenerContentBuilder
                         "There is one fish in his basket. He is smiling anyway."),
                     Ship(balikci, new Vector2(5f, -0.5f), new[] { L, S, S }, 0,
                         "He promised his wife they would see the dawn at home. He means to keep it."),
-                    Ship(kayik, new Vector2(7.5f, -0.5f), new[] { S, L }, 0,
+                    Ship(kayik, new Vector2(8.2f, -0.7f), new[] { S, L }, 0,
                         "The storm dragged them south. They found their bearing when they found the light.")
                 }),
 
-            // Night 6 — the first rock, and the first freighter: a hull that
+            // Night 6 — the first rock in the lane, and the first freighter: a hull that
             // turns slowly enough that the rock has to be planned around.
             Night(6, false, false,
                 new[] { Dock0() },
                 new[] { Rock(new Vector2(-1f, -1.5f), 0.5f) },
                 new[]
                 {
-                    Ship(yuk, new Vector2(8f, 0.5f), new[] { S, S, S, S }, 0,
+                    Ship(yuk, new Vector2(8.2f, 0.7f), new[] { S, S, S, S }, 0,
                         "Loaded with timber. The town's new roofs are aboard this ship."),
                     Ship(kayik, new Vector2(4f, 3.2f), new[] { S, S }, 0,
                         "The little boat waited for the big one. It did not want to come back alone."),
-                    Ship(balikci, new Vector2(6f, -3f), new[] { L, S, S }, 0,
+                    Ship(balikci, new Vector2(5.9f, -2.9f), new[] { L, S, S }, 0,
                         "The nets are empty but the boat is sound. They will go out again tomorrow.")
                 }),
 
@@ -146,7 +146,7 @@ public static class FenerContentBuilder
                         "They came through the haze. They saw nothing but the lighthouse."),
                     Ship(balikci, new Vector2(6f, 0.5f), new[] { L, S, S }, 0,
                         "The captain knows these rocks by heart. Tonight knowing was not enough."),
-                    Ship(kayik, new Vector2(7f, -2.8f), new[] { S, L }, 0,
+                    Ship(kayik, new Vector2(7f, -2.4f), new[] { S, L }, 0,
                         "They are carrying a passenger. She is coming to this town for the first time."),
                     Ship(balikci, new Vector2(4f, -3.4f), new[] { L, S, L }, 0,
                         "A lamp burns on the deck. It has not gone out in years.")
@@ -163,9 +163,9 @@ public static class FenerContentBuilder
                 },
                 new[]
                 {
-                    Ship(kayik, new Vector2(7.5f, 3f), new[] { S, S }, 0,
+                    Ship(kayik, new Vector2(7.8f, 2.7f), new[] { S, S }, 0,
                         "They have to make the fish market. Dawn is not far off."),
-                    Ship(balikci, new Vector2(8f, -1f), new[] { L, S, S }, 0,
+                    Ship(balikci, new Vector2(8.2f, -1.1f), new[] { L, S, S }, 0,
                         "Heavy in the water, slow to turn. This one asks for patience."),
                     Ship(yuk, new Vector2(5.5f, 2f), new[] { S, S, S, S }, 1,
                         "Hers will be the first ship at the new pier. The captain is proud of it."),
@@ -179,7 +179,7 @@ public static class FenerContentBuilder
                 new[] { Dock0(), Dock1() },
                 new[]
                 {
-                    Rock(new Vector2(1f, 0f), 0.6f),
+                    Rock(new Vector2(1.1f, 0.7f), 0.6f),
                     Rock(new Vector2(3.5f, -2f), 0.55f)
                 },
                 new[]
@@ -202,18 +202,18 @@ public static class FenerContentBuilder
                 new[]
                 {
                     Rock(new Vector2(0.5f, 1.2f), 0.6f),
-                    Rock(new Vector2(1.2f, -1.8f), 0.6f),
+                    Rock(new Vector2(1.2f, -1.9f), 0.6f),
                     Rock(new Vector2(4.5f, 0.4f), 0.5f)
                 },
                 new[]
                 {
                     Ship(kayik, new Vector2(8.5f, 2.5f), new[] { S, S }, 0,
                         "On the last night everyone is at sea. Nobody wanted to be left behind."),
-                    Ship(balikci, new Vector2(7f, -0.5f), new[] { L, S, S }, 0,
+                    Ship(balikci, new Vector2(5.9f, -0.9f), new[] { L, S, S }, 0,
                         "Full nets, a crowded deck. They are singing."),
-                    Ship(yuk, new Vector2(5f, 3.4f), new[] { S, S, S, S }, 1,
+                    Ship(yuk, new Vector2(4.9f, 3.4f), new[] { S, S, S, S }, 1,
                         "The largest ship comes home last. It always does."),
-                    Ship(balikci, new Vector2(6f, -3.4f), new[] { L, S, L }, 1,
+                    Ship(balikci, new Vector2(5.7f, -3.3f), new[] { L, S, L }, 1,
                         "The captain waved at the lighthouse. He knows he was seen."),
                     Ship(kayik, new Vector2(3f, 1.8f), new[] { S, L }, 0,
                         "The smallest boat had gone the furthest out. It still found its way back.")
@@ -319,9 +319,43 @@ public static class FenerContentBuilder
         night.showSequenceAlways = showSequence;
         night.fogEnabled = fog;
         night.docks = docks;
-        night.rocks = rocks;
         night.ships = ships;
+
+        // The sea rocks are there every night, ahead of the night's own.
+        var allRocks = new List<RockSpawn>(SeaRocks());
+        allRocks.AddRange(rocks);
+        night.rocks = allRocks.ToArray();
         return night;
+    }
+
+    /// <summary>
+    /// The seven rocks the night mock-up draws on the open sea, at its
+    /// positions but shrunk to 45% (at least a unit across) so they leave room
+    /// to steer. Ship spawns are kept clear of them.
+    /// </summary>
+    private static RockSpawn[] SeaRocks()
+    {
+        return new[]
+        {
+            SeaRock(new Vector2(-6.49f, 3.22f), 0.66f, 1, 1.268f),
+            SeaRock(new Vector2(6.77f, 3.73f), 0.72f, 5, 1.383f),
+            SeaRock(new Vector2(-0.07f, 2.96f), 0.38f, 2, 1.325f),
+            SeaRock(new Vector2(0.95f, -0.61f), 0.38f, 3, 0.923f),
+            SeaRock(new Vector2(7.10f, -0.37f), 0.38f, 4, 1.558f),
+            SeaRock(new Vector2(7.09f, -3.62f), 0.43f, 3, 1.046f),
+            SeaRock(new Vector2(-1.11f, -3.65f), 0.38f, 4, 1.558f)
+        };
+    }
+
+    private static RockSpawn SeaRock(Vector2 position, float radius, int variant, float scale)
+    {
+        return new RockSpawn
+        {
+            position = position,
+            radius = radius,
+            sprite = FenerArt.RockVariant(variant),
+            scale = scale
+        };
     }
 
     private static ShipSpawn Ship(ShipType type, Vector2 position, Signal[] sequence, int dockIndex, string note)
@@ -344,7 +378,7 @@ public static class FenerContentBuilder
     {
         return new DockSpawn
         {
-            position = new Vector2(-6.9f, -1.5f),
+            position = new Vector2(-6.0f, -0.9f),
             radius = 0.8f,
             color = new Color(1f, 0.85f, 0.55f)
         };
@@ -355,7 +389,7 @@ public static class FenerContentBuilder
     {
         return new DockSpawn
         {
-            position = new Vector2(-8.4f, 1.2f),
+            position = new Vector2(-8.8f, 0.5f),
             radius = 0.8f,
             color = new Color(0.6f, 0.85f, 1f)
         };

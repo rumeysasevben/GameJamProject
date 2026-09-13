@@ -48,6 +48,9 @@ public class RockSpawn
 
     [Tooltip("Which rock variant to draw.")]
     public Sprite sprite;
+
+    [Tooltip("Size of the drawing relative to its import size. 0 or less draws it at 1.")]
+    public float scale = 1f;
 }
 
 /// <summary>
