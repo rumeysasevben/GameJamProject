@@ -120,20 +120,160 @@ public static class FenerSceneBuilder
         // The menu is not decoration: a browser will not play a sound until the
         // page has been clicked, so the game has to open on something clickable.
         Canvas canvas = CreateCanvas("Menu Canvas");
-        var menuObject = new GameObject("MainMenu", typeof(RectTransform), typeof(MainMenuUI));
-        menuObject.transform.SetParent(canvas.transform, false);
-
-        CreateText(canvas.transform, "Title", "FENER", 120f, new Vector2(0f, 160f), new Vector2(900f, 200f));
-
-        Button start = CreateButton(menuObject.transform, "StartButton", "Start", new Vector2(0f, -40f));
-        Button continueButton = CreateButton(menuObject.transform, "ContinueButton", "Continue", new Vector2(0f, -140f));
-
-        using (var fields = new FenerEditorUtility.Fields(menuObject.GetComponent<MainMenuUI>()))
-        {
-            fields.Set("startButton", start).Set("continueButton", continueButton);
-        }
+        CreateMainMenu(canvas.transform);
 
         EditorSceneManager.SaveScene(scene, BootScenePath);
+    }
+
+    /// <summary>
+    /// The main menu: the night mock-up with its lighthouse sweeping the sea,
+    /// and the title and buttons on the darkened water to the right.
+    /// </summary>
+    private static MainMenuUI CreateMainMenu(Transform parent)
+    {
+        var root = new GameObject("MainMenu", typeof(RectTransform), typeof(MainMenuUI));
+        root.transform.SetParent(parent, false);
+        Stretch(root.GetComponent<RectTransform>());
+
+        // --- Backdrop. Envelopes the screen at any aspect, so the lantern the
+        // beam hangs from stays on the drawing.
+        Image backdrop = CreateImage(root.transform, "Backdrop", FenerArt.MenuBackground(), Vector2.zero, new Vector2(1920f, 1080f));
+        var fitter = backdrop.gameObject.AddComponent<AspectRatioFitter>();
+        fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        fitter.aspectRatio = 1920f / 1080f;
+
+        // The lantern in the drawing, as a fraction of its width and height.
+        var lantern = new Vector2(460f / 1920f, 1f - 368f / 1080f);
+
+        var beamObject = new GameObject("Beam", typeof(RectTransform));
+        beamObject.transform.SetParent(backdrop.transform, false);
+        var beam = beamObject.GetComponent<RectTransform>();
+        beam.anchorMin = lantern;
+        beam.anchorMax = lantern;
+        beam.pivot = new Vector2(0f, 0.5f);
+        beam.anchoredPosition = Vector2.zero;
+        beam.sizeDelta = new Vector2(1400f, 700f);
+
+        // The cone's apex is its left edge, which is the beam's pivot.
+        Image cone = CreateImage(beam, "Cone", FenerArt.Cone(), Vector2.zero, Vector2.zero);
+        Stretch(cone.rectTransform);
+        cone.color = new Color(1f, 0.95f, 0.82f, 0.45f);
+
+        Image glow = CreateImage(backdrop.transform, "LampGlow", FenerArt.WindowGlow(), Vector2.zero, new Vector2(260f, 260f));
+        glow.rectTransform.anchorMin = lantern;
+        glow.rectTransform.anchorMax = lantern;
+        glow.color = new Color(1f, 0.9f, 0.7f, 0.8f);
+
+        Image veil = CreateImage(root.transform, "Veil", FenerArt.MenuVeil(), Vector2.zero, Vector2.zero);
+        Stretch(veil.rectTransform);
+        veil.color = new Color(0.02f, 0.04f, 0.086f, 1f);
+
+        // --- The column on the right, anchored to the right edge so it keeps its
+        // place on wide screens.
+        var columnObject = new GameObject("Column", typeof(RectTransform));
+        columnObject.transform.SetParent(root.transform, false);
+        var column = columnObject.GetComponent<RectTransform>();
+        Anchor(column, new Vector2(1f, 0.5f), new Vector2(-480f, 0f), new Vector2(900f, 1080f));
+
+        TMP_Text eyebrow = CreateText(column, "Eyebrow", "TEN NIGHTS AT THE LIGHTHOUSE", 24f, new Vector2(0f, 156f), new Vector2(900f, 40f));
+        eyebrow.fontStyle = FontStyles.Bold;
+        eyebrow.characterSpacing = 16f;
+        eyebrow.color = new Color(Cream.r, Cream.g, Cream.b, 0.5f);
+
+        // The title and, behind it, the same word in soft amber: the lamp's
+        // light catching the letters. Grouped so they rise in together.
+        var titleObject = new GameObject("Title", typeof(RectTransform));
+        titleObject.transform.SetParent(column, false);
+        var titleGroup = titleObject.GetComponent<RectTransform>();
+        Anchor(titleGroup, new Vector2(0.5f, 0.5f), new Vector2(0f, 46f), new Vector2(900f, 240f));
+
+        TMP_Text titleGlow = CreateText(titleGroup, "Glow", "FENER", 210f, Vector2.zero, new Vector2(900f, 240f));
+        titleGlow.fontStyle = FontStyles.Bold;
+        titleGlow.characterSpacing = 18f;
+        titleGlow.color = new Color(Amber.r, Amber.g, Amber.b, 0.35f);
+        titleGlow.fontSharedMaterial = GlowMaterial(titleGlow);
+
+        TMP_Text title = CreateText(titleGroup, "Word", "FENER", 210f, Vector2.zero, new Vector2(900f, 240f));
+        title.fontStyle = FontStyles.Bold;
+        title.characterSpacing = 18f;
+        title.color = Cream;
+
+        Image rule = CreateSliced(column, "Rule", FenerArt.Pill(), new Vector2(0f, -70f), new Vector2(140f, 6f), 70f / 6f);
+        rule.color = Amber;
+
+        TMP_Text tagline = CreateText(column, "Tagline", "Answer the ships. Bring them home.", 50f, new Vector2(0f, -132f), new Vector2(900f, 70f));
+        UseHandwriting(tagline);
+        tagline.color = new Color(Cream.r, Cream.g, Cream.b, 0.85f);
+
+        // Start and Continue share the primary place; the menu shows one of
+        // them. New game sits under Continue.
+        Button start = CreateButton(column, "StartButton", "Start", new Vector2(0f, -275f), ButtonStyle.Primary, new Vector2(340f, 86f), 0.02f);
+        Button continueButton = CreateButton(column, "ContinueButton", "Continue", new Vector2(0f, -265f), ButtonStyle.Primary, new Vector2(400f, 86f), 0.02f);
+        Button newGame = CreateButton(column, "NewGameButton", "New game", new Vector2(0f, -375f), ButtonStyle.Secondary, new Vector2(300f, 70f), 0f);
+
+        TMP_Text hint = CreateText(root.transform, "ControlsHint", "Left click · short flash        Right click · long flash", 22f, Vector2.zero, new Vector2(900f, 36f));
+        Anchor(hint.rectTransform, new Vector2(1f, 0f), new Vector2(-480f, 52f), new Vector2(900f, 36f));
+        hint.fontStyle = FontStyles.Bold;
+        hint.color = new Color(Cream.r, Cream.g, Cream.b, 0.45f);
+
+        // --- Black, faded away as the menu opens.
+        Image coverImage = CreateImage(root.transform, "Cover", FenerPlaceholderArt.Load("square"), Vector2.zero, Vector2.zero);
+        Stretch(coverImage.rectTransform);
+        coverImage.color = Color.black;
+        coverImage.raycastTarget = true;
+        var cover = coverImage.gameObject.AddComponent<CanvasGroup>();
+
+        var reveal = new[]
+        {
+            AddGroup(eyebrow.gameObject), AddGroup(titleObject), AddGroup(rule.gameObject),
+            AddGroup(tagline.gameObject), AddGroup(start.gameObject), AddGroup(continueButton.gameObject),
+            AddGroup(newGame.gameObject), AddGroup(hint.gameObject)
+        };
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<MainMenuUI>()))
+        {
+            fields.Set("startButton", start)
+                  .Set("continueButton", continueButton)
+                  .Set("continueLabel", continueButton.GetComponentInChildren<TMP_Text>())
+                  .Set("newGameButton", newGame)
+                  .Set("cover", cover)
+                  .SetArray("reveal", reveal)
+                  .Set("beam", beam)
+                  .Set("lampGlow", glow);
+        }
+
+        return root.GetComponent<MainMenuUI>();
+    }
+
+    private static CanvasGroup AddGroup(GameObject go)
+    {
+        return go.AddComponent<CanvasGroup>();
+    }
+
+    /// <summary>
+    /// A copy of the label's font material with a wide, soft outer glow, so the
+    /// title's halo is drawn by the font shader rather than a blurred texture.
+    /// </summary>
+    private static Material GlowMaterial(TMP_Text label)
+    {
+        const string path = "Assets/_Project/Fonts/Title Glow.mat";
+
+        var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (material == null && label.fontSharedMaterial != null)
+        {
+            material = new Material(label.fontSharedMaterial);
+            AssetDatabase.CreateAsset(material, path);
+        }
+
+        if (material == null)
+        {
+            return label.fontSharedMaterial;
+        }
+
+        material.SetFloat(ShaderUtilities.ID_FaceDilate, 0.2f);
+        material.SetFloat(ShaderUtilities.ID_OutlineSoftness, 1f);
+        EditorUtility.SetDirty(material);
+        return material;
     }
 
     // ---------------------------------------------------------------- Game
@@ -165,19 +305,31 @@ public static class FenerSceneBuilder
         var nightList = AssetDatabase.LoadAssetAtPath<NightList>($"{DataFolder}/NightList.asset");
         TownLights town = AddTown(world.transform, nightList != null ? nightList.Count : 10);
 
-        // On the headland, where the mock-up stands it: far enough out that the
-        // beam can sweep the whole sea without the tower blocking the town.
-        Lighthouse lighthouse = InstantiatePrefab<Lighthouse>($"{PrefabFolder}/Lighthouse.prefab", world.transform, new Vector2(-5.05f, -3.6f));
+        // On the pedestal the terrain drawing leaves for it. The tower's foot
+        // sits 0.49 units above its pivot, and the pedestal's grass edge is at
+        // y = -2.93, hence -3.42.
+        Lighthouse lighthouse = InstantiatePrefab<Lighthouse>($"{PrefabFolder}/Lighthouse.prefab", world.transform, new Vector2(-5.02f, -3.42f));
 
         var docksParent = new GameObject("Docks");
         docksParent.transform.SetParent(world.transform, false);
 
         // Placed where night 1 puts them; each night repositions them from its
         // own data, so these are only what the scene view shows.
-        Dock dock0 = InstantiatePrefab<Dock>($"{PrefabFolder}/Dock.prefab", docksParent.transform, new Vector2(-6.9f, -1.5f));
+        Dock dock0 = InstantiatePrefab<Dock>($"{PrefabFolder}/Dock.prefab", docksParent.transform, new Vector2(-6.0f, -0.9f));
         dock0.gameObject.name = "Dock_0";
-        Dock dock1 = InstantiatePrefab<Dock>($"{PrefabFolder}/Dock.prefab", docksParent.transform, new Vector2(-8.4f, 1.2f));
+        Dock dock1 = InstantiatePrefab<Dock>($"{PrefabFolder}/Dock.prefab", docksParent.transform, new Vector2(-8.8f, 0.5f));
         dock1.gameObject.name = "Dock_1";
+
+        // Dock_0 is the end of the pier the terrain already draws; its own
+        // placeholder plank would sit on top of it.
+        if (FenerArt.Terrain() != null)
+        {
+            Transform plank = dock0.transform.Find("Pier");
+            if (plank != null && plank.TryGetComponent(out SpriteRenderer plankRenderer))
+            {
+                plankRenderer.enabled = false;
+            }
+        }
 
         var rocksParent = new GameObject("Rocks");
         rocksParent.transform.SetParent(world.transform, false);
@@ -388,7 +540,7 @@ public static class FenerSceneBuilder
             renderer.sortingOrder = -95;
         }
 
-        var kelp = new[] { new Vector2(-3.4f, 3.2f), new Vector2(-1.0f, 0.6f), new Vector2(-4.2f, -1.6f) };
+        var kelp = new[] { new Vector2(-3.4f, 3.2f), new Vector2(-1.0f, 0.6f), new Vector2(-3.2f, -1.2f) };
 
         for (int i = 0; i < kelp.Length; i++)
         {
@@ -412,33 +564,46 @@ public static class FenerSceneBuilder
         var go = new GameObject("Coast", typeof(CoastCollider));
         go.transform.SetParent(parent, false);
 
-        // A rotated slab, so the shoreline runs diagonally across the lower
-        // left the way the mock-up draws it.
         var land = new GameObject("Land", typeof(SpriteRenderer));
         land.transform.SetParent(go.transform, false);
-        land.transform.localPosition = new Vector3(-8.2f, -5.4f, 0f);
-        land.transform.localRotation = Quaternion.Euler(0f, 0f, -35f);
-        land.transform.localScale = new Vector3(26f, 12f, 1f);
-
         var renderer = land.GetComponent<SpriteRenderer>();
-        renderer.sprite = FenerPlaceholderArt.Load("square");
-        renderer.color = LandColor;
         renderer.sortingOrder = -90;
 
-        // Circles laid along the diagonal shore, plus one under the lighthouse
-        // for the headland it stands on. The pier at (-6.9, -1.5) and the
-        // second berth at (-8.4, 1.2) are deliberately clear of all of them:
+        Sprite terrain = FenerArt.Terrain();
+        if (terrain != null)
+        {
+            // Cut from the night mock-up at 100 px per unit, so it lands where
+            // the mock-up draws it: the crop's centre is (-6.1, -2.1).
+            land.transform.localPosition = new Vector3(-6.1f, -2.1f, 0f);
+            renderer.sprite = terrain;
+        }
+        else
+        {
+            // A rotated slab, so the shoreline runs diagonally across the lower
+            // left the way the mock-up draws it.
+            land.transform.localPosition = new Vector3(-8.2f, -5.4f, 0f);
+            land.transform.localRotation = Quaternion.Euler(0f, 0f, -35f);
+            land.transform.localScale = new Vector3(26f, 12f, 1f);
+            renderer.sprite = FenerPlaceholderArt.Load("square");
+            renderer.color = LandColor;
+        }
+
+        // Circles fitted inside the terrain drawing's land, the pedestal under
+        // the lighthouse included. The pier is left out, and Dock_0 at
+        // (-6.0, -0.9) and Dock_1 at (-8.8, 0.5) are clear of all of them:
         // close a gap here and ships can no longer reach their berth.
         var circles = new[]
         {
-            (offset: new Vector2(-9.8f, -2.2f), radius: 1.6f),
-            (offset: new Vector2(-8.8f, -3.0f), radius: 1.6f),
-            (offset: new Vector2(-7.6f, -3.8f), radius: 1.5f),
-            (offset: new Vector2(-6.4f, -4.5f), radius: 1.5f),
-            (offset: new Vector2(-5.2f, -5.2f), radius: 1.5f),
-            (offset: new Vector2(-9.8f, -4.6f), radius: 2.0f),
-            (offset: new Vector2(-7.8f, -5.4f), radius: 2.0f),
-            (offset: new Vector2(-5.0f, -4.2f), radius: 1.2f)
+            (offset: new Vector2(-9.57f, -5.38f), radius: 2.0f),
+            (offset: new Vector2(-7.52f, -5.38f), radius: 2.0f),
+            (offset: new Vector2(-9.57f, -3.32f), radius: 2.0f),
+            (offset: new Vector2(-5.52f, -5.32f), radius: 2.0f),
+            (offset: new Vector2(-5.22f, -3.32f), radius: 1.5f),
+            (offset: new Vector2(-7.57f, -3.38f), radius: 1.23f),
+            (offset: new Vector2(-9.53f, -1.32f), radius: 1.12f),
+            (offset: new Vector2(-3.52f, -5.38f), radius: 0.65f),
+            (offset: new Vector2(-7.92f, -2.17f), radius: 0.46f),
+            (offset: new Vector2(-8.42f, -1.67f), radius: 0.42f)
         };
 
         var serialized = new SerializedObject(go.GetComponent<CoastCollider>());
@@ -469,52 +634,78 @@ public static class FenerSceneBuilder
         var town = new GameObject("Town", typeof(TownLights));
         town.transform.SetParent(parent, false);
 
-        var positions = new[]
+        // The lots the terrain drawing leaves empty, given as the foot of each
+        // drawn house: the row along the road first, nearest the pier, then the
+        // rows behind it.
+        var feet = new[]
         {
-            new Vector2(-9.3f, -2.6f), new Vector2(-8.6f, -3.3f), new Vector2(-9.4f, -3.9f),
-            new Vector2(-8.0f, -4.0f), new Vector2(-7.2f, -4.6f), new Vector2(-8.7f, -4.7f),
-            new Vector2(-6.4f, -5.0f), new Vector2(-9.6f, -5.0f), new Vector2(-7.6f, -5.3f),
-            new Vector2(-5.8f, -5.4f), new Vector2(-8.9f, -5.6f), new Vector2(-6.9f, -5.8f)
+            new Vector2(-6.64f, -4.44f), new Vector2(-7.17f, -4.02f), new Vector2(-7.71f, -3.61f),
+            new Vector2(-8.23f, -3.19f), new Vector2(-8.77f, -2.78f), new Vector2(-7.46f, -4.75f),
+            new Vector2(-7.99f, -4.33f), new Vector2(-8.53f, -3.92f), new Vector2(-9.05f, -3.50f),
+            new Vector2(-8.28f, -5.06f), new Vector2(-8.80f, -4.64f), new Vector2(-9.09f, -5.37f)
         };
+
+        // The house sprite's drawing stands this far above its pivot.
+        const float footAbovePivot = 0.605f;
 
         // Exactly one house per night: the last window comes on as the last
         // night ends, so a whole lit town is the ending and not a coincidence.
-        int count = Mathf.Clamp(nightCount, 1, positions.Length);
-        if (nightCount > positions.Length)
+        int count = Mathf.Clamp(nightCount, 1, feet.Length);
+        if (nightCount > feet.Length)
         {
-            Debug.LogWarning($"Fener: {nightCount} gece var ama kasabada {positions.Length} ev yeri tanımlı; fazlası için AddTown'a konum ekle.");
+            Debug.LogWarning($"Fener: {nightCount} gece var ama kasabada {feet.Length} ev yeri tanımlı; fazlası için AddTown'a konum ekle.");
         }
 
         var windows = new WindowLight[count];
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < feet.Length; i++)
         {
-            var go = new GameObject($"House_{i:00}", typeof(WindowLight));
+            // The rows overlap, so a house further down the screen has to draw
+            // over the ones behind it — its lit layer included.
+            int rank = 0;
+            for (int j = 0; j < feet.Length; j++)
+            {
+                if (feet[j].y > feet[i].y)
+                {
+                    rank++;
+                }
+            }
+
+            // Lots past the last night still get a dark house, so the drawn
+            // town has no gaps in it.
+            bool hasLight = i < count;
+
+            var go = hasLight ? new GameObject($"House_{i:00}", typeof(WindowLight)) : new GameObject($"House_{i:00}_Unlit");
             go.transform.SetParent(town.transform, false);
-            go.transform.localPosition = new Vector3(positions[i].x, positions[i].y, 0f);
+            go.transform.localPosition = new Vector3(feet[i].x, feet[i].y - footAbovePivot, 0f);
 
             var dark = new GameObject("Dark", typeof(SpriteRenderer));
             dark.transform.SetParent(go.transform, false);
             var darkRenderer = dark.GetComponent<SpriteRenderer>();
             darkRenderer.sprite = FenerArt.HouseDark();
-            darkRenderer.sortingOrder = -80;
+            darkRenderer.sortingOrder = -88 + rank * 2;
+
+            if (!hasLight)
+            {
+                continue;
+            }
 
             var lit = new GameObject("Lit", typeof(SpriteRenderer));
             lit.transform.SetParent(go.transform, false);
             var litRenderer = lit.GetComponent<SpriteRenderer>();
             litRenderer.sprite = FenerArt.HouseLit();
-            litRenderer.sortingOrder = -79;
+            litRenderer.sortingOrder = -87 + rank * 2;
             litRenderer.color = new Color(1f, 1f, 1f, 0f);
 
-            // Behind the house, so the light looks like it is spilling out of
+            // Behind the houses, so the light looks like it is spilling out of
             // the windows rather than painted over the roof.
             var glow = new GameObject("Glow", typeof(SpriteRenderer));
             glow.transform.SetParent(go.transform, false);
-            glow.transform.localPosition = new Vector3(0f, 0.35f, 0f);
-            glow.transform.localScale = new Vector3(1.6f, 1.6f, 1f);
+            glow.transform.localPosition = new Vector3(0f, 0.95f, 0f);
+            glow.transform.localScale = new Vector3(2.8f, 2.8f, 1f);
             var glowRenderer = glow.GetComponent<SpriteRenderer>();
             glowRenderer.sprite = FenerArt.WindowGlow();
-            glowRenderer.sortingOrder = -81;
+            glowRenderer.sortingOrder = -89;
             glowRenderer.color = new Color(1f, 0.85f, 0.55f, 0f);
 
             windows[i] = go.GetComponent<WindowLight>();
@@ -1093,8 +1284,8 @@ public static class FenerSceneBuilder
         root.transform.SetParent(parent, false);
         Anchor(root.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(900f, 140f));
 
-        Image panel = CreateImage(root.transform, "Panel", FenerArt.NoteCard(), new Vector2(0f, -200f), new Vector2(1040f, 180f));
-        Anchor(panel.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, -200f), new Vector2(1040f, 180f));
+        Image panel = CreateImage(root.transform, "Panel", FenerArt.NoteCard(), new Vector2(0f, -200f), new Vector2(1040f, 254f));
+        Anchor(panel.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, -200f), new Vector2(1040f, 254f));
 
         TMP_Text label = CreateText(panel.transform, "Label", string.Empty, 38f, Vector2.zero, new Vector2(960f, 140f));
         UseHandwriting(label);

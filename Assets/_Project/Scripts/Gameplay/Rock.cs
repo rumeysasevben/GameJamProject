@@ -22,6 +22,12 @@ public class Rock : MonoBehaviour
         {
             body.sprite = spawn.sprite;
         }
+
+        if (body != null)
+        {
+            float scale = spawn.scale > 0f ? spawn.scale : 1f;
+            body.transform.localScale = new Vector3(scale, scale, 1f);
+        }
     }
 
     private void OnDrawGizmosSelected()

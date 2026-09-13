@@ -229,7 +229,7 @@ public static class FenerPrefabBuilder
         var lampPoint = new GameObject("LampPoint");
         lampPoint.transform.SetParent(root.transform, false);
 
-        // The lamp room sits about two thirds up the drawing; the beam has to
+        // The lamp room sits about three quarters up the drawing; the beam has to
         // leave from there and not from the top of the canvas.
         lampPoint.transform.localPosition = new Vector3(0f, LampHeight(body.sprite), 0f);
 
@@ -360,7 +360,7 @@ public static class FenerPrefabBuilder
     /// </summary>
     private static float LampHeight(Sprite towerSprite)
     {
-        const float lampFractionOfHeight = 0.66f;
+        const float lampFractionOfHeight = 0.78f;
         float height = towerSprite != null ? towerSprite.bounds.size.y : 2.6f;
         return height * lampFractionOfHeight;
     }

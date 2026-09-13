@@ -16,19 +16,50 @@ MonoBehaviour:
   showSequenceAlways: 0
   fogEnabled: 0
   docks:
-  - position: {x: -6.9, y: -1.5}
+  - position: {x: -6, y: -0.9}
     radius: 0.8
     color: {r: 1, g: 0.85, b: 0.55, a: 1}
   rocks:
+  - position: {x: -6.49, y: 3.22}
+    radius: 0.66
+    sprite: {fileID: 21300000, guid: 4b95bfc416c1ef14089956b515d371ec, type: 3}
+    scale: 1.268
+  - position: {x: 6.77, y: 3.73}
+    radius: 0.72
+    sprite: {fileID: 21300000, guid: 37603a229ce8b2d4eaf561d0864acb2d, type: 3}
+    scale: 1.383
+  - position: {x: -0.07, y: 2.96}
+    radius: 0.38
+    sprite: {fileID: 21300000, guid: 77564b3d949add445a382fcc375bce3d, type: 3}
+    scale: 1.325
+  - position: {x: 0.95, y: -0.61}
+    radius: 0.38
+    sprite: {fileID: 21300000, guid: 9bdd13f175dc6f34ca7d39e4b5ec393f, type: 3}
+    scale: 0.923
+  - position: {x: 7.1, y: -0.37}
+    radius: 0.38
+    sprite: {fileID: 21300000, guid: 773784e40f0e085408b7c25f59955678, type: 3}
+    scale: 1.558
+  - position: {x: 7.09, y: -3.62}
+    radius: 0.43
+    sprite: {fileID: 21300000, guid: 9bdd13f175dc6f34ca7d39e4b5ec393f, type: 3}
+    scale: 1.046
+  - position: {x: -1.11, y: -3.65}
+    radius: 0.38
+    sprite: {fileID: 21300000, guid: 773784e40f0e085408b7c25f59955678, type: 3}
+    scale: 1.558
   - position: {x: 0, y: 0.8}
     radius: 0.6
     sprite: {fileID: 21300000, guid: 4b95bfc416c1ef14089956b515d371ec, type: 3}
+    scale: 1
   - position: {x: 0, y: -1.6}
     radius: 0.6
     sprite: {fileID: 21300000, guid: 4b95bfc416c1ef14089956b515d371ec, type: 3}
+    scale: 1
   - position: {x: 2.6, y: -0.4}
     radius: 0.5
     sprite: {fileID: 21300000, guid: 4b95bfc416c1ef14089956b515d371ec, type: 3}
+    scale: 1
   ships:
   - type: {fileID: 11400000, guid: c1d8ee845973d934994e765339765983, type: 2}
     position: {x: 8, y: 2.5}
@@ -41,7 +72,7 @@ MonoBehaviour:
     dockIndex: 0
     note: The captain knows these rocks by heart. Tonight knowing was not enough.
   - type: {fileID: 11400000, guid: c1d8ee845973d934994e765339765983, type: 2}
-    position: {x: 7, y: -2.8}
+    position: {x: 7, y: -2.4}
     sequence: 0000000001000000
     dockIndex: 0
     note: They are carrying a passenger. She is coming to this town for the first
