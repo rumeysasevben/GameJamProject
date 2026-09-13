@@ -520,24 +520,46 @@ public static class FenerSceneBuilder
         var decor = new GameObject("Decor");
         decor.transform.SetParent(parent, false);
 
+        // Where the night mock-up draws its wave marks, less the few now hidden
+        // under the sea rocks, plus three more in the open water. Mock-up size
+        // (twice the sprite's import size), and unlit: under the night light
+        // a lit wave is the same colour as the water.
         var waves = new[]
         {
-            new Vector2(2.5f, 4.2f), new Vector2(6.8f, 3.4f), new Vector2(8.6f, 1.2f),
-            new Vector2(1.2f, 2.2f), new Vector2(4.4f, 0.2f), new Vector2(7.6f, -1.4f),
-            new Vector2(2.0f, -2.6f), new Vector2(5.4f, -4.2f), new Vector2(-1.4f, 3.6f),
-            new Vector2(-2.6f, -1.2f), new Vector2(0.4f, -4.4f), new Vector2(8.8f, -3.6f)
+            new Vector2(3.47f, -0.35f), new Vector2(3.72f, 1.35f), new Vector2(-3.20f, 3.80f),
+            new Vector2(2.63f, 4.20f), new Vector2(8.03f, 1.43f), new Vector2(-8.28f, 3.40f),
+            new Vector2(7.67f, 2.33f), new Vector2(-1.80f, 0.25f), new Vector2(-2.95f, -1.47f),
+            new Vector2(3.38f, -1.55f), new Vector2(5.90f, -2.10f), new Vector2(3.30f, -4.05f),
+            new Vector2(-1.25f, -4.85f), new Vector2(-0.40f, 1.48f), new Vector2(-8.07f, 0.15f),
+            new Vector2(-6.25f, 1.38f), new Vector2(6.90f, -4.78f), new Vector2(8.38f, -2.65f),
+            new Vector2(5.30f, 0.80f), new Vector2(1.70f, -2.70f), new Vector2(4.60f, 2.90f)
         };
+
+        var unlit = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/SpriteUnlit.mat");
+        var waveRenderers = new SpriteRenderer[waves.Length];
 
         for (int i = 0; i < waves.Length; i++)
         {
             var go = new GameObject($"Wave_{i}", typeof(SpriteRenderer));
             go.transform.SetParent(decor.transform, false);
             go.transform.localPosition = new Vector3(waves[i].x, waves[i].y, 0f);
+            go.transform.localScale = new Vector3(2f, 2f, 1f);
 
             var renderer = go.GetComponent<SpriteRenderer>();
             renderer.sprite = FenerArt.Wave();
-            renderer.color = new Color(1f, 1f, 1f, 0.18f);
+            renderer.color = new Color(1f, 1f, 1f, 0.85f);
             renderer.sortingOrder = -95;
+            if (unlit != null)
+            {
+                renderer.sharedMaterial = unlit;
+            }
+
+            waveRenderers[i] = renderer;
+        }
+
+        using (var fields = new FenerEditorUtility.Fields(decor.AddComponent<SeaWaves>()))
+        {
+            fields.SetArray("waves", waveRenderers);
         }
 
         var kelp = new[] { new Vector2(-3.4f, 3.2f), new Vector2(-1.0f, 0.6f), new Vector2(-3.2f, -1.2f) };
@@ -1145,7 +1167,7 @@ public static class FenerSceneBuilder
         var cardObject = new GameObject("Card", typeof(RectTransform));
         cardObject.transform.SetParent(panelObject.transform, false);
         var card = cardObject.GetComponent<RectTransform>();
-        var cardSize = new Vector2(620f, 560f);
+        var cardSize = new Vector2(620f, 690f);
         Anchor(card, new Vector2(0.5f, 0.5f), Vector2.zero, cardSize);
 
         Image shadow = CreateSliced(card, "Shadow", FenerArt.SoftShadow(), new Vector2(0f, -16f), cardSize + new Vector2(90f, 90f), 1f);
@@ -1155,26 +1177,36 @@ public static class FenerSceneBuilder
         panel.color = CardColor;
         panel.raycastTarget = true;
 
-        TMP_Text title = CreateText(card, "Title", "Paused", 46f, new Vector2(0f, 222f), new Vector2(520f, 64f));
+        TMP_Text title = CreateText(card, "Title", "Paused", 46f, new Vector2(0f, 287f), new Vector2(520f, 64f));
         title.fontStyle = FontStyles.Bold;
         title.color = Cream;
 
-        UIToggle music = CreateToggleRow(card, "Music", 140f);
-        UIToggle sfx = CreateToggleRow(card, "Sound effects", 76f);
-        UIToggle sequences = CreateToggleRow(card, "Always show ship codes", 12f);
+        UIToggle music = CreateToggleRow(card, "Music", 205f);
+        UIToggle sfx = CreateToggleRow(card, "Sound effects", 141f);
+        UIToggle sequences = CreateToggleRow(card, "Always show ship codes", 77f);
 
-        TMP_Text beamLabel = CreateText(card, "BeamWidthLabel", "Beam width", 30f, new Vector2(-60f, -58f), new Vector2(400f, 46f));
+        TMP_Text beamLabel = CreateText(card, "BeamWidthLabel", "Beam width", 30f, new Vector2(-60f, 7f), new Vector2(400f, 46f));
         beamLabel.alignment = TextAlignmentOptions.Left;
         beamLabel.color = Cream;
 
-        TMP_Text beamValue = CreateText(card, "BeamWidthValue", "medium", 26f, new Vector2(170f, -58f), new Vector2(160f, 46f));
+        TMP_Text beamValue = CreateText(card, "BeamWidthValue", "medium", 26f, new Vector2(170f, 7f), new Vector2(160f, 46f));
         beamValue.alignment = TextAlignmentOptions.Right;
         beamValue.color = new Color(Cream.r, Cream.g, Cream.b, 0.55f);
 
-        Slider beamSlider = CreateSlider(card, new Vector2(0f, -110f), new Vector2(500f, 30f));
+        Slider beamSlider = CreateSlider(card, new Vector2(0f, -45f), new Vector2(500f, 30f));
 
-        Button resume = CreateButton(card, "ResumeButton", "Resume", new Vector2(-125f, -200f), ButtonStyle.Primary, new Vector2(230f, 72f), 0.02f);
-        Button menu = CreateButton(card, "MenuButton", "Menu", new Vector2(125f, -200f), ButtonStyle.Secondary, new Vector2(230f, 72f), 0f);
+        TMP_Text speedLabel = CreateText(card, "ShipSpeedLabel", "Ship speed", 30f, new Vector2(-60f, -115f), new Vector2(400f, 46f));
+        speedLabel.alignment = TextAlignmentOptions.Left;
+        speedLabel.color = Cream;
+
+        TMP_Text speedValue = CreateText(card, "ShipSpeedValue", "normal", 26f, new Vector2(170f, -115f), new Vector2(160f, 46f));
+        speedValue.alignment = TextAlignmentOptions.Right;
+        speedValue.color = new Color(Cream.r, Cream.g, Cream.b, 0.55f);
+
+        Slider speedSlider = CreateSlider(card, new Vector2(0f, -167f), new Vector2(500f, 30f));
+
+        Button resume = CreateButton(card, "ResumeButton", "Resume", new Vector2(-125f, -265f), ButtonStyle.Primary, new Vector2(230f, 72f), 0.02f);
+        Button menu = CreateButton(card, "MenuButton", "Menu", new Vector2(125f, -265f), ButtonStyle.Secondary, new Vector2(230f, 72f), 0f);
 
         var group = panelObject.GetComponent<CanvasGroup>();
         group.alpha = 0f;
@@ -1193,6 +1225,8 @@ public static class FenerSceneBuilder
                   .Set("sequencesToggle", sequences)
                   .Set("beamSlider", beamSlider)
                   .Set("beamValueLabel", beamValue)
+                  .Set("shipSpeedSlider", speedSlider)
+                  .Set("shipSpeedValueLabel", speedValue)
                   .Set("resumeButton", resume)
                   .Set("menuButton", menu);
         }

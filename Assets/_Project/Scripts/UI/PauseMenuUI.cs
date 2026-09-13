@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// The pause panel, after the "Mola" mock-up: music, sound effects, whether the
-/// ships' codes stay on screen, and how wide the beam is.
+/// ships' codes stay on screen, how wide the beam is and how fast ships sail.
 ///
 /// Opened by the small button in the top-right corner, or Escape / P. Pausing
 /// sets the time scale to zero, which freezes everything the night runs on —
@@ -37,6 +37,8 @@ public class PauseMenuUI : MonoBehaviour
     [SerializeField] private UIToggle sequencesToggle;
     [SerializeField] private Slider beamSlider;
     [SerializeField] private TMP_Text beamValueLabel;
+    [SerializeField] private Slider shipSpeedSlider;
+    [SerializeField] private TMP_Text shipSpeedValueLabel;
 
     [Header("Buttons")]
     [SerializeField] private Button resumeButton;
@@ -65,6 +67,15 @@ public class PauseMenuUI : MonoBehaviour
             {
                 GameSettings.BeamWidth = v;
                 RefreshBeamLabel();
+            });
+        }
+
+        if (shipSpeedSlider != null)
+        {
+            shipSpeedSlider.onValueChanged.AddListener(v =>
+            {
+                GameSettings.ShipSpeed = v;
+                RefreshShipSpeedLabel();
             });
         }
 
@@ -192,8 +203,21 @@ public class PauseMenuUI : MonoBehaviour
         if (sfxToggle != null) sfxToggle.SetWithoutNotify(GameSettings.SfxOn, true);
         if (sequencesToggle != null) sequencesToggle.SetWithoutNotify(GameSettings.ShowSequences, true);
         if (beamSlider != null) beamSlider.SetValueWithoutNotify(GameSettings.BeamWidth);
+        if (shipSpeedSlider != null) shipSpeedSlider.SetValueWithoutNotify(GameSettings.ShipSpeed);
 
         RefreshBeamLabel();
+        RefreshShipSpeedLabel();
+    }
+
+    private void RefreshShipSpeedLabel()
+    {
+        if (shipSpeedValueLabel == null)
+        {
+            return;
+        }
+
+        float v = GameSettings.ShipSpeed;
+        shipSpeedValueLabel.text = v < 0.34f ? "slow" : v > 0.66f ? "fast" : "normal";
     }
 
     private void RefreshBeamLabel()

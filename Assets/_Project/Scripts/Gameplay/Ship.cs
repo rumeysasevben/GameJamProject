@@ -172,7 +172,7 @@ public class Ship : MonoBehaviour
         Vector2 toStation = waitPosition - Position;
         float remaining = toStation.magnitude;
 
-        float speed = config != null ? config.entrySpeed : 1.1f;
+        float speed = (config != null ? config.entrySpeed : 1.1f) * GameSettings.ShipSpeedMultiplier;
         float slowRadius = config != null ? Mathf.Max(0.01f, config.entrySlowRadius) : 1.5f;
 
         // Steady all the way in, then easing off over the last stretch, so the
@@ -287,13 +287,13 @@ public class Ship : MonoBehaviour
         {
             float current = Mathf.Atan2(Heading.y, Heading.x) * Mathf.Rad2Deg;
             float wanted = Mathf.Atan2(toCursor.y, toCursor.x) * Mathf.Rad2Deg;
-            float turned = Mathf.MoveTowardsAngle(current, wanted, Type.turnRate * deltaTime) * Mathf.Deg2Rad;
+            float turned = Mathf.MoveTowardsAngle(current, wanted, Type.turnRate * GameSettings.ShipSpeedMultiplier * deltaTime) * Mathf.Deg2Rad;
             Heading = new Vector2(Mathf.Cos(turned), Mathf.Sin(turned));
         }
 
         // Clamped by the remaining distance as well as by speed, so a ship
         // arriving at the cursor settles instead of orbiting it.
-        float step = Mathf.Min(Type.speed * deltaTime, Mathf.Max(0f, distance - stopRadius));
+        float step = Mathf.Min(Type.speed * GameSettings.ShipSpeedMultiplier * deltaTime, Mathf.Max(0f, distance - stopRadius));
         if (step > 0f)
         {
             transform.position += (Vector3)(Heading * step);

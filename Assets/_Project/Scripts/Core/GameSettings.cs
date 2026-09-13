@@ -19,12 +19,14 @@ public static class GameSettings
     private const string SfxKey = "fener.settings.sfx";
     private const string SequencesKey = "fener.settings.showSequences";
     private const string BeamWidthKey = "fener.settings.beamWidth";
+    private const string ShipSpeedKey = "fener.settings.shipSpeed";
 
     private static bool loaded;
     private static bool musicOn = true;
     private static bool sfxOn = true;
     private static bool showSequences;
     private static float beamWidth = 0.5f;
+    private static float shipSpeed = 0.5f;
 
     /// <summary>Raised whenever any setting changes.</summary>
     public static event Action Changed;
@@ -88,6 +90,38 @@ public static class GameSettings
         }
     }
 
+    /// <summary>Ship speed as the slider sees it, 0 slow to 1 fast. 0.5 is the tuned speed.</summary>
+    public static float ShipSpeed
+    {
+        get { Load(); return shipSpeed; }
+        set
+        {
+            Load();
+            float clamped = Mathf.Clamp01(value);
+            if (Mathf.Approximately(shipSpeed, clamped)) return;
+
+            shipSpeed = clamped;
+            PlayerPrefs.SetFloat(ShipSpeedKey, clamped);
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// What every ship's tuned speed and turn rate are multiplied by: 0.6 at
+    /// slowest, 1 in the middle, 1.5 at fastest. Turning scales with speed so a
+    /// fast ship still answers the cursor instead of circling it.
+    /// </summary>
+    public static float ShipSpeedMultiplier
+    {
+        get
+        {
+            float v = ShipSpeed;
+            return v < 0.5f
+                ? Mathf.Lerp(0.6f, 1f, v / 0.5f)
+                : Mathf.Lerp(1f, 1.5f, (v - 0.5f) / 0.5f);
+        }
+    }
+
     /// <summary>Writes the settings to disk.</summary>
     public static void Flush()
     {
@@ -106,6 +140,7 @@ public static class GameSettings
         sfxOn = PlayerPrefs.GetInt(SfxKey, 1) == 1;
         showSequences = PlayerPrefs.GetInt(SequencesKey, 0) == 1;
         beamWidth = PlayerPrefs.GetFloat(BeamWidthKey, 0.5f);
+        shipSpeed = PlayerPrefs.GetFloat(ShipSpeedKey, 0.5f);
     }
 
     private static void Store(string key, int value)
