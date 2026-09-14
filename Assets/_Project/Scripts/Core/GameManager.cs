@@ -111,6 +111,36 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(GameSceneName);
     }
 
+    /// <summary>
+    /// How far through the whole campaign the player is, 0 to 1: the ships of
+    /// every earlier night plus <paramref name="shipsHomeTonight"/>, over every
+    /// ship in the game. The music grows with this.
+    /// </summary>
+    public float CampaignProgress(int shipsHomeTonight)
+    {
+        if (nights == null || nights.Count == 0)
+        {
+            return 0f;
+        }
+
+        int total = 0;
+        int before = 0;
+
+        for (int i = 0; i < nights.Count; i++)
+        {
+            NightData data = nights.Get(i);
+            int count = data != null && data.ships != null ? data.ships.Length : 0;
+            total += count;
+
+            if (i < CurrentNightIndex)
+            {
+                before += count;
+            }
+        }
+
+        return total > 0 ? Mathf.Clamp01((before + shipsHomeTonight) / (float)total) : 0f;
+    }
+
     /// <summary>True when the night being played is the last one in the list.</summary>
     public bool IsLastNight => nights == null || CurrentNightIndex + 1 >= nights.Count;
 

@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 6226796041009255967}
   - component: {fileID: 2391372889997665197}
   - component: {fileID: 3941798713272383051}
+  - component: {fileID: 4410000000000000001}
+  - component: {fileID: 4410000000000000002}
   m_Layer: 0
   m_Name: Ship
   m_TagString: Untagged
@@ -71,6 +73,9 @@ MonoBehaviour:
   linkedHalo: {fileID: 8770539861420504510}
   emitter: {fileID: 3941798713272383051}
   bubble: {fileID: 8951711588196645367}
+  mistColor: {r: 0.55, g: 0.63, b: 0.76, a: 0}
+  emergeShare: 0.75
+  farScale: 0.8
 --- !u!114 &3941798713272383051
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -83,6 +88,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 869c88b7abf8f5b4e93fb2f5cf3828cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipSignalEmitter
+--- !u!114 &4410000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1716579965542494108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipSway
+  targets: []
+  bob: 0.055
+  roll: 3
+  surge: 0.025
+  rollPivot: {x: 0, y: -0.18}
+  speedRange: {x: 0.4, y: 0.6}
+--- !u!114 &4410000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1716579965542494108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c3d4e5f6071829304b5c6d7e8f9a01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterReflection
+  sources: []
+  hull: {fileID: 0}
+  waterlineInset: 0.12
+  material: {fileID: 2100000, guid: 8b2e4f6a1c3d4e5f9a0b1c2d3e4f5a6b, type: 2}
+  hullTint: {r: 0.5, g: 0.6, b: 0.75, a: 0.1}
+  lightTint: {r: 1, g: 0.95, b: 0.85, a: 0.25}
+  sortingOrder: -9
 --- !u!1 &1915625075001010337
 GameObject:
   m_ObjectHideFlags: 0

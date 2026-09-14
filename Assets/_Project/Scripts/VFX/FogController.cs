@@ -25,7 +25,11 @@ public class FogController : MonoBehaviour
     [Tooltip("How far out a blob travels before it wraps back to the other side.")]
     [SerializeField] private float wrapDistance = 13f;
 
+    [Tooltip("Scales how solid every blob is drawn. 1 keeps each blob's own alpha; lower lets more of the sea show through.")]
+    [SerializeField, Range(0f, 1f)] private float opacity = 0.45f;
+
     private Vector3[] origins;
+    private float[] baseAlpha;
 
     private void OnEnable()
     {
@@ -37,6 +41,25 @@ public class FogController : MonoBehaviour
             for (int i = 0; i < layers.Length; i++)
             {
                 origins[i] = layers[i] != null ? layers[i].transform.localPosition : Vector3.zero;
+            }
+        }
+
+        if (baseAlpha == null || baseAlpha.Length != layers.Length)
+        {
+            baseAlpha = new float[layers.Length];
+            for (int i = 0; i < layers.Length; i++)
+            {
+                baseAlpha[i] = layers[i] != null ? layers[i].color.a : 0f;
+            }
+        }
+
+        for (int i = 0; i < layers.Length; i++)
+        {
+            if (layers[i] != null)
+            {
+                Color c = layers[i].color;
+                c.a = baseAlpha[i] * opacity;
+                layers[i].color = c;
             }
         }
     }
@@ -74,5 +97,6 @@ public class FogController : MonoBehaviour
         layers = fogLayers;
         speeds = layerSpeeds;
         origins = null;
+        baseAlpha = null;
     }
 }

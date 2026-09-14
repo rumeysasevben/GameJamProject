@@ -75,6 +75,9 @@ public class NightController : MonoBehaviour
     [Tooltip("The water thrown up when a ship hits something.")]
     [SerializeField] private SplashVFX splash;
 
+    [Tooltip("The sun and gulls that come with each sunrise, and fill the sky on the last one.")]
+    [SerializeField] private DawnSky dawnSky;
+
     private readonly List<Ship> ships = new List<Ship>();
     private readonly List<Rock> rocks = new List<Rock>();
 
@@ -231,6 +234,11 @@ public class NightController : MonoBehaviour
             dawn.ReturnToNight(config != null ? config.duskDuration : 4f);
         }
 
+        if (dawnSky != null)
+        {
+            dawnSky.Hide(config != null ? config.duskDuration : 4f);
+        }
+
         if (fog != null)
         {
             fog.SetActive(data.fogEnabled);
@@ -266,6 +274,8 @@ public class NightController : MonoBehaviour
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.Play("night_title");
+            AudioManager.Instance.ResetFinale();
+            AudioManager.Instance.SetMusicProgress(MusicProgress());
             AudioManager.Instance.StartMusic();
         }
 
@@ -347,6 +357,9 @@ public class NightController : MonoBehaviour
 
         // 8. Berthing.
         CheckArrival();
+
+        // 9. The view leans toward the harbour as the escorted ship closes on it.
+        UpdateCameraLean();
     }
 
     /// <summary>
@@ -430,12 +443,12 @@ public class NightController : MonoBehaviour
             noteCard.Show(arrived.Note, config != null ? config.noteDuration : 3f);
         }
 
-        // One more layer of music with every ship home, so the night fills out
-        // as it goes.
+        // Every ship home, on any night, swells the next instrument in a little
+        // further: the music grows richer across the whole campaign.
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayAt("dock_arrive", berth.Position);
-            AudioManager.Instance.AddMusicLayer();
+            AudioManager.Instance.SetMusicProgress(MusicProgress());
         }
 
         OnShipDocked?.Invoke(arrived);
@@ -449,6 +462,7 @@ public class NightController : MonoBehaviour
     private void FinishNight()
     {
         nightOver = true;
+        ParallaxCamera.SetLean(Vector2.zero, 0f);
         OnAllDocked?.Invoke();
 
         // Nothing left to point at, and the frame loop stops running from here,
@@ -473,9 +487,27 @@ public class NightController : MonoBehaviour
             town.TurnOnNext();
         }
 
+        // The last night's sunrise is the ending, and is given the time for it:
+        // the lighthouse going out slowly, the sun climbing, the gulls
+        // gathering and every instrument playing at once.
+        bool isFinalNight = GameManager.Instance == null || GameManager.Instance.IsLastNight;
+        float sunrise = config != null
+            ? (isFinalNight ? Mathf.Max(config.dawnDuration, config.finaleDuration) : config.dawnDuration)
+            : (isFinalNight ? 11f : 7f);
+
+        if (dawnSky != null)
+        {
+            dawnSky.Play(sunrise, isFinalNight);
+        }
+
+        if (isFinalNight && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayFinale(sunrise);
+        }
+
         if (dawn != null)
         {
-            dawn.Play(config != null ? config.dawnDuration : 7f);
+            dawn.Play(sunrise);
             return;
         }
 
@@ -564,6 +596,40 @@ public class NightController : MonoBehaviour
             AudioManager.Instance.PlayAt("collide_splash", point);
             AudioManager.Instance.PlayAt("collide_oops", point);
         }
+    }
+
+    /// <summary>
+    /// Eases the view toward the harbour while the escorted ship draws near its
+    /// berth — nothing while it is far out, the full lean as it comes alongside —
+    /// and lets it settle back once nobody is being brought in.
+    /// </summary>
+    private void UpdateCameraLean()
+    {
+        Dock berth = linkedShip != null ? GetDock(linkedShip.DockIndex) : null;
+        if (berth == null || !berth.Active)
+        {
+            ParallaxCamera.SetLean(Vector2.zero, 0f);
+            return;
+        }
+
+        const float farDistance = 6f;
+        float distance = Vector2.Distance(linkedShip.Position, berth.Position);
+        float closeness = 1f - Mathf.Clamp01(distance / farDistance);
+
+        // Toward the harbour from the middle of the screen, which is where the
+        // camera is placed.
+        ParallaxCamera.SetLean(berth.Position, closeness);
+    }
+
+    /// <summary>The campaign's progress with tonight's ships home so far. Without a GameManager, just tonight's.</summary>
+    private float MusicProgress()
+    {
+        if (GameManager.Instance != null)
+        {
+            return GameManager.Instance.CampaignProgress(dockedCount);
+        }
+
+        return ships.Count > 0 ? dockedCount / (float)ships.Count : 0f;
     }
 
     private Dock GetDock(int index)

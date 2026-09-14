@@ -43,8 +43,30 @@ public class Beam : MonoBehaviour
     [Tooltip("How much brighter a flash is than the resting beam.")]
     [SerializeField] private float flashMultiplier = 2f;
 
-    [Tooltip("Seconds a flash takes to fade back to resting brightness.")]
-    [SerializeField] private float flashFade = 0.15f;
+    [Tooltip("Seconds a short flash takes to fade back to resting brightness.")]
+    [SerializeField] private float flashFade = 0.25f;
+
+    [Header("Pulse")]
+    [Tooltip("How much wider the drawn cone opens at the peak of a short flash. Visual only; what the beam targets is unchanged.")]
+    [SerializeField] private float shortWiden = 1.12f;
+
+    [Tooltip("How much wider the drawn cone opens at the peak of a long signal.")]
+    [SerializeField] private float longWiden = 1.45f;
+
+    [Tooltip("Seconds a long signal takes to swell to its peak — slow, so it reads as the light gathering itself.")]
+    [SerializeField] private float longRise = 0.45f;
+
+    [Tooltip("Seconds a long signal takes to settle back.")]
+    [SerializeField] private float longFade = 0.55f;
+
+    [Tooltip("The glow that flares at the lamp with every signal, so the player sees their own light go out. Size in world units at a long signal's peak.")]
+    [SerializeField] private float lampGlowSize = 1.6f;
+
+    [Tooltip("Lamp glow colour.")]
+    [SerializeField] private Color lampGlowColor = new Color(1f, 0.9f, 0.6f, 0.85f);
+
+    private SpriteRenderer lampGlow;
+    private float widen = 1f;
 
     private MeshFilter meshFilter;
     private Mesh coneMesh;
@@ -99,6 +121,7 @@ public class Beam : MonoBehaviour
             markerBaseColor = tipMarker.color;
         }
 
+        CreateLampGlow();
         RebuildMesh();
         PlaceMarker();
     }
@@ -271,44 +294,63 @@ public class Beam : MonoBehaviour
         }
 
         float hold = config == null
-            ? 0.2f
+            ? (symbol == Signal.Short ? 0.2f : 0.6f)
             : (symbol == Signal.Short ? config.flashShort : config.flashLong);
 
-        flashRoutine = StartCoroutine(FlashRoutine(hold));
+        flashRoutine = symbol == Signal.Short
+            ? StartCoroutine(FlashRoutine(0.04f, hold, flashFade, shortWiden, 0.55f))
+            : StartCoroutine(FlashRoutine(longRise, hold, longFade, longWiden, 1f));
     }
 
     /// <summary>
-    /// One pulse. The drawn cone is what flashes now — it is the only beam —
-    /// going to full opacity and a hotter yellow, then easing back. A Light2D,
-    /// if one is still wired, pulses along with it.
+    /// One pulse: the light swells over <paramref name="rise"/>, holds, and
+    /// settles back over <paramref name="fade"/>. At the peak the drawn cone
+    /// is at full opacity and <paramref name="peakWiden"/> times as wide, and
+    /// the glow at the lamp flares to <paramref name="glow"/> of its size.
+    ///
+    /// A short signal rises almost at once and is gone quickly — a blink. A
+    /// long one gathers slowly and opens wide — the lighthouse drawing breath.
+    /// The player sees the difference in their own light, not only in the bar.
     /// </summary>
-    private IEnumerator FlashRoutine(float hold)
+    private IEnumerator FlashRoutine(float rise, float hold, float fade, float peakWiden, float glow)
     {
-        // Full opacity and a little deeper in colour: the brightest a sprite
-        // can go without HDR, which the WebGL build does not have.
-        // Brighter by opacity alone, so a flash reads as the same light getting
-        // stronger rather than turning a deeper yellow.
-        Color peakCone = new Color(baseConeColor.r, baseConeColor.g, baseConeColor.b, Mathf.Min(1f, baseConeColor.a * 2f));
-
-        SetFlash(1f, peakCone);
-        yield return new WaitForSeconds(hold);
+        // Start from wherever an interrupted pulse left the light, so fast
+        // input still reads as separate pulses instead of snapping.
+        float start = currentPulse;
 
         float elapsed = 0f;
-        while (elapsed < flashFade)
+        while (elapsed < rise)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / flashFade);
-            SetFlash(1f - t, Color.Lerp(peakCone, baseConeColor, t));
+            SetPulse(Mathf.Lerp(start, 1f, Mathf.SmoothStep(0f, 1f, elapsed / rise)), peakWiden, glow);
             yield return null;
         }
 
-        SetFlash(0f, baseConeColor);
+        SetPulse(1f, peakWiden, glow);
+        yield return new WaitForSeconds(hold);
+
+        elapsed = 0f;
+        while (elapsed < fade)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / fade);
+
+            // Eased out, so the light lingers a moment before letting go.
+            SetPulse(1f - t * t * (3f - 2f * t), peakWiden, glow);
+            yield return null;
+        }
+
+        SetPulse(0f, peakWiden, glow);
         flashRoutine = null;
     }
 
-    /// <summary><paramref name="amount"/> is how far into the flash the light is, 0 resting to 1 peak.</summary>
-    private void SetFlash(float amount, Color coneColor)
+    private float currentPulse;
+
+    /// <summary><paramref name="amount"/> is how far into the pulse the light is, 0 resting to 1 peak.</summary>
+    private void SetPulse(float amount, float peakWiden, float glow)
     {
+        currentPulse = amount;
+
         if (beamLight != null)
         {
             beamLight.intensity = Mathf.Lerp(baseIntensity, baseIntensity * flashMultiplier, amount);
@@ -316,7 +358,76 @@ public class Beam : MonoBehaviour
 
         if (coneSprite != null)
         {
-            coneSprite.color = coneColor;
+            // Brighter by opacity alone — the brightest a sprite can go without
+            // HDR, which the WebGL build does not have — so a flash reads as
+            // the same light getting stronger rather than a different colour.
+            float peakAlpha = Mathf.Min(1f, baseConeColor.a * 2f);
+            coneSprite.color = new Color(baseConeColor.r, baseConeColor.g, baseConeColor.b, Mathf.Lerp(baseConeColor.a, peakAlpha, amount));
+
+            widen = Mathf.Lerp(1f, peakWiden, amount);
+            FitConeSprite();
+        }
+
+        if (lampGlow != null)
+        {
+            bool lit = amount > 0.001f && (coneSprite == null || coneSprite.gameObject.activeInHierarchy);
+            lampGlow.enabled = lit;
+
+            if (lit)
+            {
+                float size = lampGlowSize * glow * Mathf.Lerp(0.4f, 1f, amount);
+                lampGlow.transform.localScale = new Vector3(size, size, 1f);
+                lampGlow.color = new Color(lampGlowColor.r, lampGlowColor.g, lampGlowColor.b, lampGlowColor.a * amount);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The flare at the lamp. A soft round glow generated here, drawn with the
+    /// cone's own material and just above it, so it blends the way the beam does.
+    /// </summary>
+    private void CreateLampGlow()
+    {
+        if (lampGlow != null)
+        {
+            return;
+        }
+
+        const int across = 64;
+        var texture = new Texture2D(across, across, TextureFormat.RGBA32, false)
+        {
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Bilinear,
+            name = "LampGlow"
+        };
+
+        var pixels = new Color32[across * across];
+        float centre = (across - 1) * 0.5f;
+        for (int y = 0; y < across; y++)
+        {
+            for (int x = 0; x < across; x++)
+            {
+                float r = new Vector2(x - centre, y - centre).magnitude / centre;
+                float a = Mathf.Clamp01(1f - r);
+                pixels[y * across + x] = new Color32(255, 255, 255, (byte)(a * a * 255f));
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+
+        var go = new GameObject("LampGlow", typeof(SpriteRenderer));
+        go.transform.SetParent(transform, false);
+
+        lampGlow = go.GetComponent<SpriteRenderer>();
+        lampGlow.sprite = Sprite.Create(texture, new Rect(0, 0, across, across), new Vector2(0.5f, 0.5f), across);
+        lampGlow.enabled = false;
+
+        if (coneSprite != null)
+        {
+            lampGlow.sharedMaterial = coneSprite.sharedMaterial;
+            lampGlow.sortingLayerID = coneSprite.sortingLayerID;
+            lampGlow.sortingOrder = coneSprite.sortingOrder + 1;
         }
     }
 
@@ -410,7 +521,9 @@ public class Beam : MonoBehaviour
         // angle the game tests against.
         float wantedHalfWidth = Length * Mathf.Tan(HalfAngle * Mathf.Deg2Rad);
         float drawnHalfWidth = bounds.size.y * 0.5f * coneSpriteEdge;
-        float scaleY = wantedHalfWidth / drawnHalfWidth;
+        // Widened while a pulse is on. Only the drawing: Contains still tests
+        // the true angle, so a flash never changes which ship is addressed.
+        float scaleY = wantedHalfWidth / drawnHalfWidth * widen;
 
         coneSprite.transform.localScale = new Vector3(scaleX, scaleY, 1f);
 

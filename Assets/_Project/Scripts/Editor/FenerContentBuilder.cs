@@ -152,10 +152,9 @@ public static class FenerContentBuilder
                         "A lamp burns on the deck. It has not gone out in years.")
                 }),
 
-            // Night 8 — a second berth opens; now the sequence says where a
-            // ship belongs, not just which one is answering.
+            // Night 8 — four ships, all bound for the one pier.
             Night(8, false, false,
-                new[] { Dock0(), Dock1() },
+                new[] { Dock0() },
                 new[]
                 {
                     Rock(new Vector2(1.5f, 1.8f), 0.55f),
@@ -167,16 +166,16 @@ public static class FenerContentBuilder
                         "They have to make the fish market. Dawn is not far off."),
                     Ship(balikci, new Vector2(8.2f, -1.1f), new[] { L, S, S }, 0,
                         "Heavy in the water, slow to turn. This one asks for patience."),
-                    Ship(yuk, new Vector2(5.5f, 2f), new[] { S, S, S, S }, 1,
-                        "Hers will be the first ship at the new pier. The captain is proud of it."),
-                    Ship(balikci, new Vector2(4f, -3f), new[] { L, S, L }, 1,
-                        "They are looking for the north pier. The coloured strip is meant for them.")
+                    Ship(yuk, new Vector2(5.5f, 2f), new[] { S, S, S, S }, 0,
+                        "Her first run into this harbour. The captain is proud of it."),
+                    Ship(balikci, new Vector2(4f, -3f), new[] { L, S, L }, 0,
+                        "They are looking for the pier. The light is meant for them.")
                 }),
 
             // Night 9 — fog. Hulls disappear; only the flashes and whatever the
             // beam is touching can be seen.
             Night(9, false, true,
-                new[] { Dock0(), Dock1() },
+                new[] { Dock0() },
                 new[]
                 {
                     Rock(new Vector2(1.1f, 0.7f), 0.6f),
@@ -188,17 +187,16 @@ public static class FenerContentBuilder
                         "When the fog came down they did not trust the compass. They waited for the light."),
                     Ship(balikci, new Vector2(6f, -2.5f), new[] { L, S, S }, 0,
                         "The boy is on his first crossing. He says he is not frightened."),
-                    Ship(yuk, new Vector2(4f, 3.4f), new[] { S, S, S, S }, 1,
+                    Ship(yuk, new Vector2(4f, 3.4f), new[] { S, S, S, S }, 0,
                         "The town's winter coal is in the hold. If this ship is late, the town is cold."),
-                    Ship(kayik, new Vector2(2.5f, -3.4f), new[] { S, L }, 1,
+                    Ship(kayik, new Vector2(2.5f, -3.4f), new[] { S, L }, 0,
                         "They called to each other in the fog. Nobody answered.")
                 }),
 
-            // Night 10 — five ships, every sequence four symbols long, two
-            // berths, three rocks and fog. Everything the game has taught, at
-            // once.
+            // Night 10 — five ships, every sequence four symbols long, three
+            // rocks and fog. Everything the game has taught, at once.
             Night(10, false, true,
-                new[] { Dock0(), Dock1() },
+                new[] { Dock0() },
                 new[]
                 {
                     Rock(new Vector2(0.5f, 1.2f), 0.6f),
@@ -211,9 +209,9 @@ public static class FenerContentBuilder
                         "On the last night everyone is at sea. Nobody wanted to be left behind."),
                     Ship(balikci, new Vector2(5.9f, -0.9f), new[] { L, S, S }, 0,
                         "Full nets, a crowded deck. They are singing."),
-                    Ship(yuk, new Vector2(4.9f, 3.4f), new[] { S, S, S, S }, 1,
+                    Ship(yuk, new Vector2(4.9f, 3.4f), new[] { S, S, S, S }, 0,
                         "The largest ship comes home last. It always does."),
-                    Ship(balikci, new Vector2(5.7f, -3.3f), new[] { L, S, L }, 1,
+                    Ship(balikci, new Vector2(5.7f, -3.3f), new[] { L, S, L }, 0,
                         "The captain waved at the lighthouse. He knows he was seen."),
                     Ship(kayik, new Vector2(3f, 1.8f), new[] { S, L }, 0,
                         "The smallest boat had gone the furthest out. It still found its way back.")
@@ -255,7 +253,7 @@ public static class FenerContentBuilder
             "link_success", "ship_reply",
             "collide_splash", "collide_oops",
             "dock_arrive", "window_on",
-            "night_title"
+            "night_title", "gull_cry"
         };
 
         SfxLibrary library = LoadOrCreate<SfxLibrary>($"{DataFolder}/SfxLibrary.asset");
@@ -381,17 +379,6 @@ public static class FenerContentBuilder
             position = new Vector2(-6.0f, -0.9f),
             radius = 0.8f,
             color = new Color(1f, 0.85f, 0.55f)
-        };
-    }
-
-    /// <summary>The second berth, opened from night 8, further up the coast.</summary>
-    private static DockSpawn Dock1()
-    {
-        return new DockSpawn
-        {
-            position = new Vector2(-8.8f, 0.5f),
-            radius = 0.8f,
-            color = new Color(0.6f, 0.85f, 1f)
         };
     }
 

@@ -35,7 +35,7 @@ public static class FenerAudioLinker
     public const string LibraryAssetPath = LibraryPath;
 
     /// <summary>Music layers in order. Index 0 plays from the start of a night; the rest open as ships arrive.</summary>
-    private static readonly string[] MusicOrder = { "music_base", "music_layer_1", "music_layer_2", "music_layer_3", "music_layer_4" };
+    private static readonly string[] MusicOrder = { "music_base", "layer1_warmth", "layer2_harp", "layer3_bells", "layer4_strings", "layer5_choir" };
 
     private static readonly Regex VariationSuffix = new Regex(@"_\d+$");
 

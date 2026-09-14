@@ -286,7 +286,8 @@ public static class FenerSceneBuilder
 
         var config = AssetDatabase.LoadAssetAtPath<GameConfig>($"{DataFolder}/GameConfig.asset");
 
-        CreateCamera(SeaNight * 0.5f);
+        // The slow drift that the far layers lag behind.
+        CreateCamera(SeaNight * 0.5f).gameObject.AddComponent<ParallaxCamera>();
         CreateEventSystem();
 
         // A spare, for when the Game scene is played on its own. It stands
@@ -301,6 +302,10 @@ public static class FenerSceneBuilder
         Starfield stars = CreateStars(world.transform);
         SplashVFX splash = CreateSplash(world.transform);
         CoastCollider coast = CreateCoast(world.transform);
+        CreateSurf(world.transform);
+        CreateDolphin(world.transform);
+        CreateClouds(world.transform);
+        DawnSky dawnSky = CreateDawnSky(world.transform);
 
         var nightList = AssetDatabase.LoadAssetAtPath<NightList>($"{DataFolder}/NightList.asset");
         TownLights town = AddTown(world.transform, nightList != null ? nightList.Count : 10);
@@ -404,6 +409,7 @@ public static class FenerSceneBuilder
                   .Set("ending", ending)
                   .Set("pauseMenu", pause)
                   .Set("splash", splash)
+                  .Set("dawnSky", dawnSky)
                   .Set("dawn", dawnObject.GetComponent<DawnController>())
                   .Set("town", town);
         }
@@ -750,6 +756,12 @@ public static class FenerSceneBuilder
         var root = new GameObject("Stars", typeof(Starfield));
         root.transform.SetParent(parent, false);
 
+        // Stars are the farthest thing there is: they barely follow the drift.
+        using (var layer = new FenerEditorUtility.Fields(root.AddComponent<ParallaxLayer>()))
+        {
+            layer.Set("motion", 0.1f);
+        }
+
         var positions = new[]
         {
             new Vector2(-6.2f, 4.6f), new Vector2(-3.4f, 3.9f), new Vector2(-1.1f, 4.8f),
@@ -782,6 +794,65 @@ public static class FenerSceneBuilder
 
         root.GetComponent<Starfield>().Bind(stars);
         return root.GetComponent<Starfield>();
+    }
+
+    /// <summary>Waves breaking along the shore. Builds its own foam and spray at runtime; its surf points default to the terrain drawing's shoreline.</summary>
+    private static void CreateSurf(Transform parent)
+    {
+        var root = new GameObject("Surf", typeof(ShoreSurf));
+        root.transform.SetParent(parent, false);
+
+        var unlit = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/SpriteUnlit.mat");
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<ShoreSurf>()))
+        {
+            fields.Set("material", unlit);
+        }
+    }
+
+    /// <summary>The sun and gulls of each sunrise. Builds its own sun and birds at runtime.</summary>
+    private static DawnSky CreateDawnSky(Transform parent)
+    {
+        var root = new GameObject("DawnSky", typeof(DawnSky));
+        root.transform.SetParent(parent, false);
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<DawnSky>()))
+        {
+            fields.Set("gullWingsUp", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Sea/gull_up.png"))
+                  .Set("gullWingsDown", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Sea/gull_down.png"))
+                  .Set("material", AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/SpriteUnlit.mat"));
+        }
+
+        return root.GetComponent<DawnSky>();
+    }
+
+    /// <summary>Faint haze drifting over the far water, lagging the view's drift. Builds its own wisps at runtime.</summary>
+    private static void CreateClouds(Transform parent)
+    {
+        var root = new GameObject("Clouds", typeof(NightClouds), typeof(ParallaxLayer));
+        root.transform.SetParent(parent, false);
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<NightClouds>()))
+        {
+            fields.Set("material", AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/SpriteUnlit.mat"));
+        }
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<ParallaxLayer>()))
+        {
+            fields.Set("motion", 0.25f);
+        }
+    }
+
+    /// <summary>The dolphin that now and then leaps out of the open water. Waits unseen until its moment.</summary>
+    private static void CreateDolphin(Transform parent)
+    {
+        var root = new GameObject("Dolphin", typeof(Dolphin));
+        root.transform.SetParent(parent, false);
+
+        using (var fields = new FenerEditorUtility.Fields(root.GetComponent<Dolphin>()))
+        {
+            fields.Set("sprite", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Project/Art/Sea/dolphin.png"));
+            fields.Set("material", AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/SpriteUnlit.mat"));
+        }
     }
 
     /// <summary>The splash effect. Builds its own droplets at runtime, so there is nothing to place here.</summary>
@@ -1329,7 +1400,7 @@ public static class FenerSceneBuilder
             fields.Set("panel", panel.rectTransform)
                   .Set("label", label)
                   .Set("hiddenPosition", new Vector2(0f, -200f))
-                  .Set("shownPosition", new Vector2(0f, 110f));
+                  .Set("shownPosition", new Vector2(0f, 200f));
         }
 
         return root.GetComponent<NoteCardUI>();

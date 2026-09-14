@@ -54,12 +54,25 @@ public class Ship : MonoBehaviour
     [Tooltip("The floating sequence bubble above the hull.")]
     [SerializeField] private SequenceBubbleUI bubble;
 
+    [Header("Arrival")]
+    [Tooltip("The haze a ship comes out of: its hull starts this colour, fully see-through, and clears to its own as it sails in.")]
+    [SerializeField] private Color mistColor = new Color(0.55f, 0.63f, 0.76f, 0f);
+
+    [Tooltip("How much of the way in the ship takes to come fully clear of the haze.")]
+    [SerializeField, Range(0.1f, 1f)] private float emergeShare = 0.75f;
+
+    [Tooltip("How large the hull starts, far out, before it grows to its own size.")]
+    [SerializeField, Range(0.5f, 1f)] private float farScale = 0.8f;
+
     private GameConfig config;
     private float frozenUntil;
     private Vector2 waitPosition;
     private Vector2 entryFrom;
     private float entryDelay;
     private float entryElapsed;
+    private float entryDistance;
+    private Vector3 bodyScale = Vector3.one;
+    private bool bodyScaleCaptured;
     private int directionIndex = -1;
     private bool showingBound;
     private Coroutine bounceRoutine;
@@ -119,6 +132,7 @@ public class Ship : MonoBehaviour
         entryFrom = OffScreenApproach(waitPosition);
         this.entryDelay = entryDelay;
         entryElapsed = 0f;
+        entryDistance = Mathf.Max(0.01f, (waitPosition - entryFrom).magnitude);
 
         transform.position = new Vector3(entryFrom.x, entryFrom.y, 0f);
 
@@ -135,6 +149,7 @@ public class Ship : MonoBehaviour
 
         State = ShipState.Arriving;
         ApplyStateVisuals();
+        SetEmergence(0f);
 
         if (wake != null)
         {
@@ -181,9 +196,15 @@ public class Ship : MonoBehaviour
 
         float step = speed * deltaTime;
 
+        // Out of the haze: see-through and mist-coloured far out, clearing to
+        // itself over the first part of the way in, so there is a moment of
+        // "someone is coming" before the ship is plainly there.
+        SetEmergence(1f - remaining / entryDistance);
+
         if (remaining <= step || remaining <= 0.01f)
         {
             transform.position = new Vector3(waitPosition.x, waitPosition.y, 0f);
+            SetEmergence(1f);
             SetIdle();
             return false;
         }
@@ -192,6 +213,35 @@ public class Ship : MonoBehaviour
         transform.position += (Vector3)(Heading * step);
         UpdateDirectionSprite();
         return true;
+    }
+
+    /// <summary>
+    /// How clear of the haze the hull is, 0 hidden in it to 1 plainly there.
+    /// Colour and size both, so a far-off ship reads as far off, not just faint.
+    /// </summary>
+    private void SetEmergence(float progress)
+    {
+        if (body == null)
+        {
+            return;
+        }
+
+        if (!bodyScaleCaptured)
+        {
+            bodyScale = body.transform.localScale;
+            bodyScaleCaptured = true;
+        }
+
+        float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress / emergeShare));
+        body.color = Color.Lerp(mistColor, Color.white, k);
+        body.transform.localScale = bodyScale * Mathf.Lerp(farScale, 1f, k);
+
+        if (wake != null)
+        {
+            Color w = wake.color;
+            w.a = k;
+            wake.color = w;
+        }
     }
 
     /// <summary>

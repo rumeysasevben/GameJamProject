@@ -25,6 +25,11 @@ public class ShipSignalEmitter : MonoBehaviour
 
     private Coroutine loop;
     private bool replayNow;
+    private bool hasSignalled;
+
+    // A beat after a ship has come clear of the haze and settled, before it
+    // first calls: long enough to be seen arriving, short enough not to stall.
+    private const float FirstCallDelay = 1.2f;
 
     /// <summary>Wires the emitter to its ship and parts. Called from <see cref="Ship.Init"/>.</summary>
     public void Init(Ship owner, GameConfig gameConfig, SequenceBubbleUI sequenceBubble, SpriteRenderer lampRenderer, bool alwaysShowSequence)
@@ -35,6 +40,7 @@ public class ShipSignalEmitter : MonoBehaviour
         lamp = lampRenderer;
         lampLight = lamp != null ? lamp.GetComponent<Light2D>() : null;
         showSequenceAlways = alwaysShowSequence;
+        hasSignalled = false;
 
         SetLamp(false);
 
@@ -105,8 +111,11 @@ public class ShipSignalEmitter : MonoBehaviour
 
         while (true)
         {
+            float wait = hasSignalled ? interval : Mathf.Min(interval, FirstCallDelay);
+            hasSignalled = true;
+
             float waited = 0f;
-            while (waited < interval && !replayNow)
+            while (waited < wait && !replayNow)
             {
                 waited += Time.deltaTime;
                 yield return null;

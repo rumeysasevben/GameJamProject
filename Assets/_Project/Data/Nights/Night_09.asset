@@ -19,9 +19,6 @@ MonoBehaviour:
   - position: {x: -6, y: -0.9}
     radius: 0.8
     color: {r: 1, g: 0.85, b: 0.55, a: 1}
-  - position: {x: -8.8, y: 0.5}
-    radius: 0.8
-    color: {r: 0.6, g: 0.85, b: 1, a: 1}
   rocks:
   - position: {x: -6.49, y: 3.22}
     radius: 0.66
@@ -74,11 +71,11 @@ MonoBehaviour:
   - type: {fileID: 11400000, guid: f0704119be1822a4a92efbde5ab6d163, type: 2}
     position: {x: 4, y: 3.4}
     sequence: 00000000000000000000000000000000
-    dockIndex: 1
+    dockIndex: 0
     note: The town's winter coal is in the hold. If this ship is late, the town is
       cold.
   - type: {fileID: 11400000, guid: c1d8ee845973d934994e765339765983, type: 2}
     position: {x: 2.5, y: -3.4}
     sequence: 0000000001000000
-    dockIndex: 1
+    dockIndex: 0
     note: They called to each other in the fog. Nobody answered.

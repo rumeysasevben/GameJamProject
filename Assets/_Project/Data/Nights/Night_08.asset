@@ -19,9 +19,6 @@ MonoBehaviour:
   - position: {x: -6, y: -0.9}
     radius: 0.8
     color: {r: 1, g: 0.85, b: 0.55, a: 1}
-  - position: {x: -8.8, y: 0.5}
-    radius: 0.8
-    color: {r: 0.6, g: 0.85, b: 1, a: 1}
   rocks:
   - position: {x: -6.49, y: 3.22}
     radius: 0.66
@@ -73,10 +70,10 @@ MonoBehaviour:
   - type: {fileID: 11400000, guid: f0704119be1822a4a92efbde5ab6d163, type: 2}
     position: {x: 5.5, y: 2}
     sequence: 00000000000000000000000000000000
-    dockIndex: 1
-    note: Hers will be the first ship at the new pier. The captain is proud of it.
+    dockIndex: 0
+    note: Her first run into this harbour. The captain is proud of it.
   - type: {fileID: 11400000, guid: 199463921a45a8640b18b5d0d964ad74, type: 2}
     position: {x: 4, y: -3}
     sequence: 010000000000000001000000
-    dockIndex: 1
-    note: They are looking for the north pier. The coloured strip is meant for them.
+    dockIndex: 0
+    note: They are looking for the pier. The light is meant for them.

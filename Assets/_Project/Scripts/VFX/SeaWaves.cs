@@ -18,6 +18,12 @@ public class SeaWaves : MonoBehaviour
     [Tooltip("How far a wave sways either side of where it was placed, in world units.")]
     [SerializeField] private float sway = 0.12f;
 
+    [Tooltip("How far a wave rises and falls as it rolls, in world units.")]
+    [SerializeField] private float bob = 0.05f;
+
+    [Tooltip("How much a wave stretches out as it crests. 0 keeps its length.")]
+    [SerializeField, Range(0f, 1f)] private float stretch = 0.25f;
+
     [Tooltip("How deep the fade goes. 0 keeps a wave steady, 1 fades it out entirely.")]
     [SerializeField, Range(0f, 1f)] private float fade = 0.5f;
 
@@ -25,6 +31,7 @@ public class SeaWaves : MonoBehaviour
     [SerializeField] private Vector2 speedRange = new Vector2(0.12f, 0.3f);
 
     private Vector3[] home;
+    private Vector3[] homeScale;
     private float[] speeds;
     private float[] phases;
     private float[] baseAlpha;
@@ -33,6 +40,7 @@ public class SeaWaves : MonoBehaviour
     private void Awake()
     {
         home = new Vector3[waves.Length];
+        homeScale = new Vector3[waves.Length];
         speeds = new float[waves.Length];
         phases = new float[waves.Length];
         baseAlpha = new float[waves.Length];
@@ -48,6 +56,7 @@ public class SeaWaves : MonoBehaviour
             if (waves[i] != null)
             {
                 home[i] = waves[i].transform.localPosition;
+                homeScale[i] = waves[i].transform.localScale;
                 baseColor[i] = waves[i].color * tint;
                 baseAlpha[i] = baseColor[i].a;
             }
@@ -65,10 +74,16 @@ public class SeaWaves : MonoBehaviour
             }
 
             float angle = Time.time * speeds[i] * Mathf.PI * 2f + phases[i];
-            wave.transform.localPosition = home[i] + new Vector3(Mathf.Sin(angle) * sway, 0f, 0f);
 
             // Brightest as it passes the middle of its sway, dimmest at the ends.
             float swell = Mathf.Abs(Mathf.Cos(angle));
+
+            // Rising and lengthening as it crests, flattening back into the
+            // water at the ends of the sway.
+            wave.transform.localPosition = home[i] + new Vector3(Mathf.Sin(angle) * sway, swell * bob, 0f);
+            Vector3 scale = homeScale[i];
+            wave.transform.localScale = new Vector3(scale.x * (1f - stretch * 0.5f + stretch * swell), scale.y, scale.z);
+
             Color c = baseColor[i];
             c.a = baseAlpha[i] * (1f - fade + fade * swell);
             wave.color = c;

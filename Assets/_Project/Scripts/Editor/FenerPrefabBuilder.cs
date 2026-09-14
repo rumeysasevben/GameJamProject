@@ -116,6 +116,14 @@ public static class FenerPrefabBuilder
             fields.Set("target", root.transform);
         }
 
+        // Riding the swell, and seen in the water beneath. Both find Body and
+        // Lamp by name.
+        root.AddComponent<ShipSway>();
+        using (var fields = new FenerEditorUtility.Fields(root.AddComponent<WaterReflection>()))
+        {
+            fields.Set("material", AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/WaterReflection.mat"));
+        }
+
         Save(root, $"{PrefabFolder}/Ship.prefab");
     }
 

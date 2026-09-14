@@ -13,9 +13,12 @@ using UnityEngine;
 /// - the beam hum, a single looping source faded up while the light is on a
 ///   ship — the game's only continuous sound, and the one that tells the
 ///   player they are pointing at something without saying so;
-/// - the music, several layers started together and opened one at a time as
-///   ships come home. Started together is the whole trick: bring a layer in
-///   late and it is out of time for the rest of the night.
+/// - the music, a base bed and instrument layers started together, scheduled
+///   on the same audio-clock sample, and never restarted between nights. Each
+///   ship brought home anywhere in the campaign swells the next layer in a
+///   little further, so the harbour's music grows from a lone bed on the first
+///   night to every instrument at once by the last. Started together is the
+///   whole trick: bring a layer in late and it is out of time for good.
 ///
 /// Nothing here fails loudly. A missing clip plays silence, because on a jam
 /// the audio lands last and the game has to be playable before it does.
@@ -43,11 +46,14 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private float humFade = 3f;
 
     [Header("Music")]
-    [Tooltip("The base bed and the layers on top, all the same length and tempo. Index 0 plays from the start of a night.")]
+    [Tooltip("The base bed and the instrument layers on top, all exactly the same length. Index 0 always plays; the rest come in with the campaign's progress, in order.")]
     [SerializeField] private AudioClip[] musicLayers = new AudioClip[0];
 
-    [Tooltip("How quickly a layer opens when a ship gets home.")]
-    [SerializeField] private float layerFade = 1.5f;
+    [Tooltip("Seconds a layer takes to swell to its new level when a ship gets home. Slow, so it is felt rather than noticed.")]
+    [SerializeField] private float layerFade = 4f;
+
+    [Tooltip("How loud the layers sit against the base, each at full. Matched by index to the layers after the base; missing entries are 1.")]
+    [SerializeField] private float[] layerGains = { 1f, 1f, 1f, 1f, 1f };
 
     [Header("Pool")]
     [Tooltip("How many one-shot effects can overlap.")]
@@ -60,7 +66,14 @@ public class AudioManager : MonoBehaviour
     private float humTarget;
 
     private AudioSource[] layerSources;
-    private int openLayers;
+    private float[] layerLevels;
+    private bool musicStarted;
+
+    // How far through the campaign the player is, 0 to 1. Drives the layers.
+    private float musicProgress;
+
+    // A little extra lift for the finale, on top of full progress.
+    private float finaleBoost;
 
     /// <summary>Half the screen in world units. Used to pan a sound by where it happened.</summary>
     private const float HalfScreenWidth = 9.6f;
@@ -100,16 +113,7 @@ public class AudioManager : MonoBehaviour
             hum.volume = Mathf.MoveTowards(hum.volume, humTarget * SfxLevel, humFade * Time.unscaledDeltaTime * humVolume);
         }
 
-        for (int i = 0; i < (layerSources != null ? layerSources.Length : 0); i++)
-        {
-            if (layerSources[i] == null)
-            {
-                continue;
-            }
-
-            float target = i < openLayers ? MusicLevel : 0f;
-            layerSources[i].volume = Mathf.MoveTowards(layerSources[i].volume, target, layerFade * Time.unscaledDeltaTime * musicVolume);
-        }
+        UpdateMusicLevels(Time.unscaledDeltaTime);
     }
 
     // ------------------------------------------------------------ Effects
@@ -174,41 +178,160 @@ public class AudioManager : MonoBehaviour
     // ------------------------------------------------------------ Music
 
     /// <summary>
-    /// Starts the night's music from the top, with only the base layer open.
-    /// Every layer starts at once and stays running, silent until it is needed.
+    /// Starts the music if it is not already running. Every layer is scheduled
+    /// on the same audio-clock sample and left running, silent until progress
+    /// opens it. Later nights call this too and simply carry on: the music
+    /// does not restart between nights, it keeps growing.
     /// </summary>
     public void StartMusic()
     {
-        openLayers = 1;
-
-        for (int i = 0; i < (layerSources != null ? layerSources.Length : 0); i++)
+        if (musicStarted || layerSources == null || layerSources.Length == 0)
         {
-            if (layerSources[i] == null || layerSources[i].clip == null)
+            return;
+        }
+
+        musicStarted = true;
+
+        // A short lead so every clip is ready and all of them begin on exactly
+        // the same sample; Play() on each in turn can land a frame apart.
+        double startAt = AudioSettings.dspTime + 0.2;
+
+        for (int i = 0; i < layerSources.Length; i++)
+        {
+            AudioSource source = layerSources[i];
+            if (source == null || source.clip == null)
             {
                 continue;
             }
 
-            layerSources[i].volume = i == 0 ? MusicLevel : 0f;
-            layerSources[i].time = 0f;
-            layerSources[i].Play();
+            source.volume = TargetLevel(i);
+            layerLevels[i] = source.volume;
+            source.PlayScheduled(startAt);
         }
     }
 
-    /// <summary>Opens one more layer. Called as each ship reaches its berth.</summary>
-    public void AddMusicLayer()
+    /// <summary>
+    /// How far through the campaign the player is, 0 to 1 — every ship home so
+    /// far over every ship there is. Layers swell toward the new level.
+    /// </summary>
+    public void SetMusicProgress(float progress)
+    {
+        musicProgress = Mathf.Clamp01(progress);
+    }
+
+    /// <summary>
+    /// The last dawn: every layer open, and a little louder than the game
+    /// has ever been, over <paramref name="seconds"/>.
+    /// </summary>
+    public void PlayFinale(float seconds)
+    {
+        musicProgress = 1f;
+        StartCoroutine(RaiseFinale(Mathf.Max(0.1f, seconds)));
+    }
+
+    /// <summary>Back to the campaign's own level. For a new game from the ending.</summary>
+    public void ResetFinale()
+    {
+        StopAllCoroutines();
+        finaleBoost = 0f;
+    }
+
+    private System.Collections.IEnumerator RaiseFinale(float seconds)
+    {
+        float from = finaleBoost;
+        float elapsed = 0f;
+
+        while (elapsed < seconds)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            finaleBoost = Mathf.Lerp(from, 1f, Mathf.SmoothStep(0f, 1f, elapsed / seconds));
+            yield return null;
+        }
+
+        finaleBoost = 1f;
+    }
+
+    /// <summary>
+    /// Where layer <paramref name="index"/> should sit. The base is always
+    /// on. The others open in turn across the campaign, each one fading
+    /// through its own slice of progress, so every single ship home makes
+    /// the sound a little fuller rather than nothing happening until a
+    /// threshold is crossed.
+    /// </summary>
+    private float TargetLevel(int index)
+    {
+        float lift = 1f + 0.25f * finaleBoost;
+
+        if (index == 0)
+        {
+            return Mathf.Min(1f, MusicLevel * lift);
+        }
+
+        int extras = layerSources.Length - 1;
+        float opened = Mathf.Clamp01(musicProgress * extras - (index - 1));
+        float gain = layerGains != null && index - 1 < layerGains.Length ? layerGains[index - 1] : 1f;
+
+        // Eased, so a layer arrives softly and does not jump on its first ship.
+        return Mathf.Min(1f, MusicLevel * gain * Mathf.SmoothStep(0f, 1f, opened) * lift);
+    }
+
+    private void UpdateMusicLevels(float deltaTime)
     {
         if (layerSources == null)
         {
             return;
         }
 
-        openLayers = Mathf.Min(openLayers + 1, layerSources.Length);
+        float step = deltaTime / Mathf.Max(0.1f, layerFade);
+
+        for (int i = 0; i < layerSources.Length; i++)
+        {
+            if (layerSources[i] == null)
+            {
+                continue;
+            }
+
+            layerLevels[i] = Mathf.MoveTowards(layerLevels[i], TargetLevel(i), step);
+            layerSources[i].volume = layerLevels[i];
+        }
+
+        KeepLayersInStep();
     }
 
-    /// <summary>Closes everything but the base layer, for the start of a night.</summary>
-    public void ResetMusicLayers()
+    /// <summary>
+    /// Pulls any layer that has wandered back onto the base. The layers are cut
+    /// to the base's length, but an MP3 can decode a few milliseconds longer or
+    /// shorter than it measured, and a few milliseconds a loop adds up over a
+    /// campaign. A correction of a twentieth of a second in a wash of reverb
+    /// goes unheard; half a second of drift would not.
+    /// </summary>
+    private void KeepLayersInStep()
     {
-        openLayers = 1;
+        AudioSource bed = layerSources.Length > 0 ? layerSources[0] : null;
+        if (bed == null || bed.clip == null || !bed.isPlaying)
+        {
+            return;
+        }
+
+        for (int i = 1; i < layerSources.Length; i++)
+        {
+            AudioSource layer = layerSources[i];
+            if (layer == null || layer.clip == null || !layer.isPlaying)
+            {
+                continue;
+            }
+
+            // In seconds, not samples: the clips need not share a sample rate.
+            float length = layer.clip.length;
+            float wanted = Mathf.Repeat(bed.time, length);
+            float drift = Mathf.Abs(layer.time - wanted);
+            drift = Mathf.Min(drift, length - drift);
+
+            if (drift > 0.05f)
+            {
+                layer.time = wanted;
+            }
+        }
     }
 
     // ------------------------------------------------------------ Setup
@@ -252,6 +375,7 @@ public class AudioManager : MonoBehaviour
     private void BuildMusic()
     {
         layerSources = new AudioSource[musicLayers != null ? musicLayers.Length : 0];
+        layerLevels = new float[layerSources.Length];
 
         for (int i = 0; i < layerSources.Length; i++)
         {
@@ -265,6 +389,13 @@ public class AudioManager : MonoBehaviour
             source.spatialBlend = 0f;
             source.volume = 0f;
             layerSources[i] = source;
+
+            // Loaded now, not on first play, so the scheduled start finds every
+            // layer ready and none of them comes in late.
+            if (source.clip != null)
+            {
+                source.clip.LoadAudioData();
+            }
         }
     }
 }

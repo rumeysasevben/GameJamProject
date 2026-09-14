@@ -83,6 +83,9 @@ public class GameConfig : ScriptableObject
     [Tooltip("Length of the dawn sequence that closes a night. Long enough to land, short enough that a player on their fifth night is not waiting through it. It can also be clicked past.")]
     public float dawnDuration = 7f;
 
+    [Tooltip("Length of the last night's sunrise, the ending: the light going out, the sun coming up, the gulls gathering and the music at its fullest. Longer than an ordinary dawn so it can land.")]
+    public float finaleDuration = 11f;
+
     [Tooltip("How long the sky takes to darken back down at the start of the next night. Long enough not to be a cut, short enough not to be a wait.")]
     public float duskDuration = 2.5f;
 }

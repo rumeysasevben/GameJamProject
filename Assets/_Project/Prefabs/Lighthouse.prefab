@@ -546,7 +546,13 @@ MonoBehaviour:
   segments: 14
   coreAlpha: 0.5
   flashMultiplier: 2
-  flashFade: 0.15
+  flashFade: 0.25
+  shortWiden: 1.12
+  longWiden: 1.45
+  longRise: 0.45
+  longFade: 0.55
+  lampGlowSize: 1.6
+  lampGlowColor: {r: 1, g: 0.9, b: 0.6, a: 0.85}
   tipMarker: {fileID: 8475419149215507484}
   markerPulse: 0.12
   markerPulseSpeed: 1.6
